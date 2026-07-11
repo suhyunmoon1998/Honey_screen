@@ -1,0 +1,462 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CLIENT
+  STAFF
+  ADMIN
+}
+
+enum ActorType {
+  CLIENT
+  STAFF
+}
+
+enum MissionState {
+  ACTIVE
+  COMPLETED
+}
+
+enum MissionKind {
+  QUICK
+  STANDARD
+  FULL
+}
+
+enum MissionSlotState {
+  ALLOCATED
+  ANSWERED
+}
+
+enum LegalReviewStatus {
+  DRAFT
+  APPROVED
+  RETIRED
+}
+
+enum OutboxStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+enum ClarificationState {
+  OPEN
+  RESOLVED
+}
+
+enum ReviewFlagState {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+  DISMISSED
+}
+
+model Organization {
+  id                   String               @id @default(cuid())
+  name                 String
+  defaultTimeZone      String
+  createdAt            DateTime             @default(now())
+  clients              Client[]
+  invitations          Invitation[]
+  missions             Mission[]
+  questions            QuestionDefinition[]
+  rewards              RewardDefinition[]
+  staffUsers           StaffUser[]
+  outboxEvents         OutboxEvent[]
+  notifications        InAppNotification[]
+  auditEvents          AuditEvent[]
+}
+
+model StaffUser {
+  id               String               @id @default(cuid())
+  organizationId   String
+  email            String               @unique
+  displayName      String
+  role             Role
+  passwordHash     String
+  allowlisted      Boolean              @default(true)
+  createdAt        DateTime             @default(now())
+  organization     Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdQuestionVersions QuestionVersion[] @relation("QuestionVersionCreatedBy")
+  approvedQuestionVersions QuestionVersion[] @relation("QuestionVersionApprovedBy")
+  clarifications   ClarificationRequest[]
+  notifications    InAppNotification[]
+}
+
+model Client {
+  id                    String            @id @default(cuid())
+  organizationId        String
+  phoneE164             String            @unique
+  locale                String
+  timeZone              String
+  onboardingCompletedAt DateTime?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  retentionClass        String            @default("ABANDONED_INTAKE")
+  eligibleForDeletionAt DateTime?
+  legalHold             Boolean           @default(false)
+  deletionRequestedAt   DateTime?
+  deletionApprovedAt    DateTime?
+  restrictedAt          DateTime?
+  deletedAt             DateTime?
+  organization          Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  consents              ConsentRecord[]
+  missions              Mission[]
+  questionLedgerEntries DailyQuestionLedger[]
+  answerRevisions       AnswerRevision[]
+  idempotencyRecords    IdempotencyRecord[]
+  reviewFlags           ReviewFlag[]
+  clarifications        ClarificationRequest[]
+  progressEvents        ProgressEvent[]
+  rewardGrants          RewardGrant[]
+}
+
+model Invitation {
+  id                    String       @id @default(cuid())
+  organizationId        String
+  tokenHash             String       @unique
+  phoneE164             String
+  locale                String
+  timeZone              String
+  expiresAt             DateTime
+  acceptedAt            DateTime?
+  createdAt             DateTime     @default(now())
+  retentionClass        String       @default("INVITATION")
+  eligibleForDeletionAt DateTime?
+  legalHold             Boolean      @default(false)
+  deletionRequestedAt   DateTime?
+  deletionApprovedAt    DateTime?
+  restrictedAt          DateTime?
+  deletedAt             DateTime?
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model VerificationChallenge {
+  id                String   @id @default(cuid())
+  phoneE164         String
+  codeHash          String
+  purpose           String
+  expiresAt         DateTime
+  resendAvailableAt DateTime
+  attemptCount      Int      @default(0)
+  maxAttempts       Int      @default(5)
+  consumedAt        DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Session {
+  id             String    @id @default(cuid())
+  tokenHash      String    @unique
+  actorType      ActorType
+  actorId        String
+  organizationId String
+  role           Role
+  locale         String
+  expiresAt      DateTime
+  createdAt      DateTime  @default(now())
+}
+
+model ConsentRecord {
+  id            String   @id @default(cuid())
+  clientId      String
+  consentType   String
+  granted       Boolean
+  policyVersion String
+  locale        String
+  createdAt     DateTime @default(now())
+  client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model QuestionDefinition {
+  id             String            @id @default(cuid())
+  organizationId String
+  stableKey      String            @unique
+  category       String
+  isAdministrative Boolean         @default(false)
+  createdAt      DateTime          @default(now())
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clarifications ClarificationRequest[]
+  ledgerEntries  DailyQuestionLedger[]
+  missionSlots   MissionSlot[]
+  versions       QuestionVersion[]
+}
+
+model QuestionVersion {
+  id                String             @id @default(cuid())
+  definitionId      String
+  versionNumber     Int
+  promptEs          String
+  promptEn          String
+  answerType        String
+  category          String
+  priority          Int                @default(100)
+  emotionalWeight   Int                @default(1)
+  estimatedEffort   Int                @default(1)
+  answerSchemaJson  Json?
+  activeFrom        DateTime?
+  activeUntil       DateTime?
+  legalReviewStatus LegalReviewStatus
+  displayOrder      Int
+  fictionalSeed     Boolean            @default(false)
+  createdByStaffId  String?
+  approvedByStaffId String?
+  approvedAt        DateTime?
+  retiredAt         DateTime?
+  createdAt         DateTime           @default(now())
+  definition        QuestionDefinition  @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+  createdBy         StaffUser?         @relation("QuestionVersionCreatedBy", fields: [createdByStaffId], references: [id], onDelete: SetNull)
+  approvedBy        StaffUser?         @relation("QuestionVersionApprovedBy", fields: [approvedByStaffId], references: [id], onDelete: SetNull)
+  options           QuestionOption[]
+  branchRules       BranchRule[]
+  reviewFlagRules   ReviewFlagRule[]
+  missionSlots      MissionSlot[]
+  answerRevisions   AnswerRevision[]
+  dailyLedgerEntries DailyQuestionLedger[]
+
+  @@unique([definitionId, versionNumber])
+}
+
+model QuestionOption {
+  id                String           @id @default(cuid())
+  questionVersionId String
+  optionKey         String
+  value             String
+  labelEs           String
+  labelEn           String
+  displayOrder      Int
+  createdAt         DateTime         @default(now())
+  questionVersion   QuestionVersion  @relation(fields: [questionVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([questionVersionId, optionKey])
+}
+
+model BranchRule {
+  id                    String           @id @default(cuid())
+  questionVersionId     String
+  targetDefinitionKey   String
+  priority              Int              @default(100)
+  ruleJson              Json
+  createdAt             DateTime         @default(now())
+  questionVersion       QuestionVersion  @relation(fields: [questionVersionId], references: [id], onDelete: Cascade)
+}
+
+model ReviewFlagRule {
+  id                    String           @id @default(cuid())
+  questionVersionId     String
+  flagType              String
+  ruleJson              Json
+  createdAt             DateTime         @default(now())
+  questionVersion       QuestionVersion  @relation(fields: [questionVersionId], references: [id], onDelete: Cascade)
+}
+
+model Mission {
+  id               String         @id @default(cuid())
+  organizationId   String
+  clientId         String
+  kind             MissionKind    @default(QUICK)
+  requestedSize    Int
+  state            MissionState   @default(ACTIVE)
+  locale           String
+  localDate        String?
+  createdAt        DateTime       @default(now())
+  completedAt      DateTime?
+  organization     Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client           Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  slots            MissionSlot[]
+}
+
+model MissionSlot {
+  id                 String           @id @default(cuid())
+  missionId         String
+  position          Int
+  questionDefinitionId String
+  questionVersionId String
+  state             MissionSlotState  @default(ALLOCATED)
+  countsTowardDailyCap Boolean        @default(true)
+  isClarification   Boolean           @default(false)
+  allocatedAt       DateTime          @default(now())
+  answeredAt        DateTime?
+  mission           Mission           @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  questionVersion   QuestionVersion   @relation(fields: [questionVersionId], references: [id], onDelete: Restrict)
+  questionDefinition QuestionDefinition @relation(fields: [questionDefinitionId], references: [id], onDelete: Restrict)
+  dailyLedgerEntries DailyQuestionLedger[]
+  answerRevisions   AnswerRevision[]
+  answerCurrent     AnswerCurrent?
+
+  @@unique([missionId, position])
+}
+
+model DailyQuestionLedger {
+  id                   String             @id @default(cuid())
+  organizationId       String
+  clientId             String
+  localDate            String
+  questionDefinitionId String
+  questionVersionId    String
+  missionSlotId        String
+  countedAt            DateTime           @default(now())
+  client               Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  questionDefinition   QuestionDefinition @relation(fields: [questionDefinitionId], references: [id], onDelete: Restrict)
+  questionVersion      QuestionVersion    @relation(fields: [questionVersionId], references: [id], onDelete: Restrict)
+  missionSlot          MissionSlot        @relation(fields: [missionSlotId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, localDate, questionDefinitionId])
+  @@unique([missionSlotId])
+}
+
+model AnswerRevision {
+  id                String      @id @default(cuid())
+  organizationId    String
+  clientId          String
+  missionSlotId     String
+  questionVersionId String
+  revisionNumber    Int
+  valueJson         Json
+  idempotencyKey    String
+  createdLocalDate  String?
+  createdAt         DateTime    @default(now())
+  missionSlot       MissionSlot @relation(fields: [missionSlotId], references: [id], onDelete: Cascade)
+  questionVersion   QuestionVersion @relation(fields: [questionVersionId], references: [id], onDelete: Restrict)
+  client            Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([missionSlotId, revisionNumber])
+  @@unique([clientId, idempotencyKey])
+}
+
+model AnswerCurrent {
+  missionSlotId     String         @id
+  latestRevisionId  String         @unique
+  updatedAt         DateTime       @updatedAt
+  missionSlot       MissionSlot    @relation(fields: [missionSlotId], references: [id], onDelete: Cascade)
+}
+
+model ProgressEvent {
+  id             String    @id @default(cuid())
+  clientId       String
+  eventType      String
+  points         Int
+  sourceType     String
+  sourceId       String
+  idempotencyKey String    @unique
+  createdAt      DateTime  @default(now())
+  client         Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model ReviewFlag {
+  id                String          @id @default(cuid())
+  organizationId    String
+  clientId          String
+  missionSlotId     String?
+  answerRevisionId  String?
+  flagType          String
+  state             ReviewFlagState @default(OPEN)
+  createdAt         DateTime        @default(now())
+  client            Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, answerRevisionId, flagType])
+}
+
+model ClarificationRequest {
+  id                   String             @id @default(cuid())
+  organizationId       String
+  clientId             String
+  questionDefinitionId String
+  requestedByStaffId   String?
+  reasonCode           String
+  state                ClarificationState @default(OPEN)
+  createdAt            DateTime           @default(now())
+  resolvedAt           DateTime?
+  client               Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  questionDefinition   QuestionDefinition @relation(fields: [questionDefinitionId], references: [id], onDelete: Restrict)
+  requestedBy          StaffUser?         @relation(fields: [requestedByStaffId], references: [id], onDelete: SetNull)
+}
+
+model IdempotencyRecord {
+  id             String    @id @default(cuid())
+  organizationId String
+  clientId       String
+  scope          String
+  key            String
+  requestHash    String
+  resourceType   String
+  resourceId      String?
+  responseJson   Json?
+  expiresAt      DateTime
+  createdAt      DateTime  @default(now())
+  client         Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, scope, key])
+}
+
+model RewardDefinition {
+  id             String        @id @default(cuid())
+  organizationId String
+  rewardKey      String        @unique
+  nameEs         String
+  nameEn         String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  grants         RewardGrant[]
+}
+
+model RewardGrant {
+  id               String           @id @default(cuid())
+  clientId         String
+  rewardDefinitionId String
+  sourceProgressEventId String
+  createdAt        DateTime         @default(now())
+  client           Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  rewardDefinition RewardDefinition @relation(fields: [rewardDefinitionId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, rewardDefinitionId])
+}
+
+model OutboxEvent {
+  id             String       @id @default(cuid())
+  organizationId String
+  eventType      String
+  aggregateType  String
+  aggregateId    String
+  idempotencyKey String       @unique
+  payloadJson    Json
+  status         OutboxStatus @default(PENDING)
+  availableAt    DateTime     @default(now())
+  processedAt    DateTime?
+  attemptCount   Int          @default(0)
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model InAppNotification {
+  id             String      @id @default(cuid())
+  organizationId String
+  recipientId    String
+  type           String
+  title          String
+  body           String
+  sourceEventId  String      @unique
+  readAt         DateTime?
+  createdAt      DateTime    @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  recipient      StaffUser   @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+}
+
+model AuditEvent {
+  id             String       @id @default(cuid())
+  organizationId String
+  actorType      ActorType
+  actorId        String
+  action         String
+  targetType     String
+  targetId       String
+  metadataJson   Json
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}

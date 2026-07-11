@@ -1,0 +1,38 @@
+{
+  "name": "honey-case-adventure",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter web dev\" \"pnpm --filter worker dev\"",
+    "build": "pnpm --filter web build && pnpm --filter worker build",
+    "lint": "pnpm --filter web lint && eslint apps/worker/src packages --ext .ts,.tsx",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc -p tsconfig.check.json --noEmit",
+    "test": "pnpm test:unit && pnpm test:integration && pnpm test:security",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration --maxWorkers=1",
+    "test:e2e": "playwright test",
+    "test:security": "vitest run tests/security",
+    "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:unit && pnpm test:integration && pnpm test:security && pnpm build",
+    "db:start": "brew services start postgresql@16",
+    "db:stop": "brew services stop postgresql@16",
+    "db:create": "createdb honey_case_adventure || true",
+    "db:migrate": "pnpm --filter @honey/db prisma migrate deploy",
+    "db:migrate:dev": "pnpm --filter @honey/db prisma migrate dev",
+    "db:seed": "pnpm --filter @honey/db prisma db seed",
+    "db:reset": "pnpm --filter @honey/db prisma migrate reset --force",
+    "db:verify-upgrade": "tsx scripts/db-verify-upgrade.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.1",
+    "@types/node": "20.19.43",
+    "concurrently": "9.2.1",
+    "eslint": "9.39.1",
+    "prettier": "3.6.2",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.46.4",
+    "vitest": "3.2.4"
+  }
+}

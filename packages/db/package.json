@@ -1,0 +1,21 @@
+{
+  "name": "@honey/db",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prisma": "prisma"
+  },
+  "dependencies": {
+    "@honey/config": "workspace:*",
+    "@honey/domain": "workspace:*",
+    "@prisma/client": "6.16.2",
+    "prisma": "6.16.2",
+    "zod": "4.1.12"
+  }
+}

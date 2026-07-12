@@ -1,5 +1,9 @@
 import { getEnv, isDemoContentAllowedForEnvironment } from "@honey/config";
-import { hashPassword, hashToken } from "@honey/domain";
+import {
+  HONEY_REWARD_DEFINITIONS,
+  hashPassword,
+  hashToken,
+} from "@honey/domain";
 import { prisma } from "../src/index";
 
 type SeedQuestion = {
@@ -1118,6 +1122,22 @@ export async function seedDatabase() {
       nameEn: "Participation clue",
     },
   });
+
+  for (const reward of HONEY_REWARD_DEFINITIONS) {
+    await prisma.rewardDefinition.upsert({
+      where: { rewardKey: reward.rewardKey },
+      update: {
+        nameEs: reward.nameEs,
+        nameEn: reward.nameEn,
+      },
+      create: {
+        organizationId: organization.id,
+        rewardKey: reward.rewardKey,
+        nameEs: reward.nameEs,
+        nameEn: reward.nameEn,
+      },
+    });
+  }
 
   if (!allowDemoContent) {
     return;

@@ -16,6 +16,7 @@
       "@honey/db": ["../../packages/db/src/index.ts"],
       "@honey/domain": ["../../packages/domain/src/index.ts"],
       "@honey/i18n": ["../../packages/i18n/src/index.ts"],
+      "@honey/observability": ["../../packages/observability/src/index.ts"],
       "@honey/ui": ["../../packages/ui/src/index.ts"],
       "@/*": ["./src/*"]
     }

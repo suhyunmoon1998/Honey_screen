@@ -15,3 +15,4 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export { seedDatabase } from "../prisma/seed";
+export type { Prisma } from "@prisma/client";

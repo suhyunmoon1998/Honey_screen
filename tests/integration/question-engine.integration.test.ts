@@ -1,6 +1,6 @@
 import { prisma } from "@honey/db";
+import { InMemoryOperationalEventSink } from "@honey/observability";
 import {
-  InMemoryOperationalEventSink,
   resetOperationalEventSink,
   setOperationalEventSink,
 } from "../../apps/web/src/lib/operational-events";

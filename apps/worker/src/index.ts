@@ -1,5 +1,16 @@
 import { getEnv } from "@honey/config";
 import { prisma } from "@honey/db";
+import {
+  JsonConsoleOperationalEventSink,
+  NoopOperationalEventSink,
+  createOperationalEvent,
+  type OperationalEventSink,
+} from "@honey/observability";
+
+const operationalEventSink: OperationalEventSink =
+  getEnv().NODE_ENV === "development"
+    ? new JsonConsoleOperationalEventSink()
+    : new NoopOperationalEventSink();
 
 export async function processPendingOutbox() {
   const events = await prisma.outboxEvent.findMany({
@@ -55,6 +66,19 @@ export async function processPendingOutbox() {
   }
 }
 
+async function emitWorkerOperationalEvent(input: {
+  eventName: "serialization_retry";
+  result: "RETRYING";
+  reasonCode: "PRISMA_P2034";
+  retryCount?: number;
+}) {
+  await operationalEventSink.emit(
+    createOperationalEvent(input, {
+      environment: getEnv().NODE_ENV,
+    }),
+  );
+}
+
 async function main() {
   const env = getEnv();
 
@@ -64,6 +88,19 @@ async function main() {
 
   setInterval(() => {
     processPendingOutbox().catch((error) => {
+      if (
+        typeof error === "object" &&
+        error &&
+        "code" in error &&
+        error.code === "P2034"
+      ) {
+        emitWorkerOperationalEvent({
+          eventName: "serialization_retry",
+          result: "RETRYING",
+          reasonCode: "PRISMA_P2034",
+        }).catch(() => {});
+      }
+
       console.error(
         "worker_error",
         error instanceof Error ? error.message : "unknown",

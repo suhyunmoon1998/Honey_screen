@@ -89,6 +89,31 @@ async function completeInvitationFlow(
   await expect(page).toHaveURL(/\/dashboard$/);
 }
 
+async function getCacheStorageSnapshot(page: Page) {
+  return page.evaluate(async () => {
+    if (!("serviceWorker" in navigator)) {
+      return { supported: false, cacheNames: [], entries: [] as string[] };
+    }
+
+    await navigator.serviceWorker.ready;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+
+    const cacheNames = await caches.keys();
+    const entries: string[] = [];
+
+    for (const cacheName of cacheNames) {
+      const cache = await caches.open(cacheName);
+      const requests = await cache.keys();
+
+      for (const request of requests) {
+        entries.push(new URL(request.url).pathname);
+      }
+    }
+
+    return { supported: true, cacheNames, entries };
+  });
+}
+
 test("Spanish invitation to mission completion and staff notifications", async ({
   browser,
   page,
@@ -263,6 +288,38 @@ test("Spanish invitation to mission completion and staff notifications", async (
 
     await finalizeArtifacts();
   }
+});
+
+test("service worker caches only public immutable assets and excludes authenticated responses", async ({
+  page,
+}) => {
+  await completeInvitationFlow(page);
+
+  await page.goto("/dashboard");
+  await page.goto("/mission/does-not-exist").catch(() => {});
+  await page.goto("/dashboard");
+
+  const snapshot = await getCacheStorageSnapshot(page);
+
+  expect(snapshot.supported).toBe(true);
+  expect(snapshot.cacheNames).toContain("honey-public-static-v1");
+  expect(snapshot.entries).toContain("/offline.html");
+  expect(snapshot.entries).toContain("/manifest.webmanifest");
+  expect(snapshot.entries).toContain("/honey-source.png");
+  expect(snapshot.entries).not.toContain("/dashboard");
+  expect(snapshot.entries).not.toContain("/reward");
+  expect(
+    snapshot.entries.every((entry) => !entry.startsWith("/mission/")),
+  ).toBe(true);
+  expect(snapshot.entries.every((entry) => !entry.startsWith("/api/"))).toBe(
+    true,
+  );
+  expect(snapshot.entries.every((entry) => !entry.startsWith("/staff/"))).toBe(
+    true,
+  );
+  expect(snapshot.entries.every((entry) => !entry.startsWith("/invite/"))).toBe(
+    true,
+  );
 });
 
 test("unauthorized user receives no sensitive data", async ({

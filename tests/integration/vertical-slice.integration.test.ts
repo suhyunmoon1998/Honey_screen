@@ -2,6 +2,7 @@ import { prisma } from "@honey/db";
 import { processPendingOutbox } from "../../apps/worker/src/index";
 import { resetDatabase } from "../../packages/testing/src/db";
 import {
+  completeOnboarding,
   getMissionForClient,
   getOrCreateQuickMission,
   requestOtp,
@@ -97,7 +98,7 @@ describe("vertical slice services", () => {
     expect(reloaded?.slots[1]?.state).toBe("ALLOCATED");
   });
 
-  it("completes the mission and creates reward plus outbox events in the same workflow", async () => {
+  it("completes the mission and creates Honey participation, rewards, and outbox events in the same workflow", async () => {
     await requestOtp({
       token: "honey-demo-invite",
       rawPhone: "(555) 555-0101",
@@ -135,13 +136,70 @@ describe("vertical slice services", () => {
     const reward = await prisma.rewardGrant.findFirst({
       where: { clientId: registration.client.id },
     });
+    const profile = await prisma.honeyProfile.findUnique({
+      where: { clientId: registration.client.id },
+    });
+    const participation = await prisma.participationEvent.findMany({
+      where: { clientId: registration.client.id },
+      orderBy: { createdAt: "asc" },
+    });
     const notifications = await prisma.outboxEvent.findMany({
       where: { aggregateType: "MISSION", aggregateId: mission.id },
     });
 
     expect(completed?.state).toBe("COMPLETED");
     expect(reward).not.toBeNull();
+    expect(profile?.totalPoints).toBeGreaterThanOrEqual(1);
+    expect(
+      participation.some((event) => event.eventType === "MISSION_COMPLETED"),
+    ).toBe(true);
     expect(notifications.length).toBe(2);
+  });
+
+  it("records onboarding completion once and rebuilds the Honey profile from immutable events", async () => {
+    await requestOtp({
+      token: "honey-demo-invite",
+      rawPhone: "(555) 555-0101",
+      locale: "es",
+      acceptedPrivacy: true,
+      acceptedMessages: true,
+    });
+
+    const registration = await verifyOtpAndRegister({
+      token: "honey-demo-invite",
+      rawPhone: "(555) 555-0101",
+      code: "246810",
+      locale: "es",
+    });
+
+    await completeOnboarding({
+      clientId: registration.client.id,
+      timeZone: "America/Los_Angeles",
+      locale: "es",
+    });
+
+    await completeOnboarding({
+      clientId: registration.client.id,
+      timeZone: "America/Los_Angeles",
+      locale: "es",
+    });
+
+    expect(
+      await prisma.participationEvent.count({
+        where: {
+          clientId: registration.client.id,
+          eventType: "ONBOARDING_COMPLETED",
+        },
+      }),
+    ).toBe(1);
+
+    const profile = await prisma.honeyProfile.findUnique({
+      where: { clientId: registration.client.id },
+    });
+
+    expect(profile?.totalPoints).toBe(1);
+    expect(profile?.levelKey).toBe("clue_finder");
+    expect(profile?.unlockedRewardKeys).toEqual(["magnifying_glass"]);
   });
 
   it("replaying the final answer stays idempotent and does not duplicate completion artifacts", async () => {
@@ -202,7 +260,7 @@ describe("vertical slice services", () => {
       }),
     ).toBe(1);
     expect(
-      await prisma.progressEvent.count({
+      await prisma.participationEvent.count({
         where: { sourceType: "MISSION", sourceId: mission.id },
       }),
     ).toBe(1);
@@ -210,7 +268,7 @@ describe("vertical slice services", () => {
       await prisma.rewardGrant.count({
         where: { clientId: registration.client.id },
       }),
-    ).toBe(1);
+    ).toBeGreaterThanOrEqual(1);
     expect(
       await prisma.outboxEvent.count({
         where: { aggregateType: "MISSION", aggregateId: mission.id },

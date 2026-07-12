@@ -4,10 +4,13 @@ import {
   deriveReviewFlags,
   evaluateRule,
   evaluateRuleFailClosed,
+  getHoneyLevel,
   getLocalDateInTimeZone,
+  getParticipationPointsForEvent,
   getRequestedMissionSize,
   isInvitationExpired,
   isOtpExpired,
+  projectHoneyProfile,
   rewardDependsOnlyOnParticipation,
   selectApprovedQuestions,
   selectMissionQuestions,
@@ -435,6 +438,75 @@ describe("domain policies", () => {
     });
 
     expect(flags).toEqual([{ flagType: "POSSIBLE_MEAL_PERIOD_ISSUE" }]);
+  });
+
+  it("rebuilds the Honey profile exactly from immutable participation events", () => {
+    const profile = projectHoneyProfile([
+      {
+        eventType: "ONBOARDING_COMPLETED",
+        idempotencyKey: "onboarding:client-1",
+      },
+      {
+        eventType: "MISSION_COMPLETED",
+        idempotencyKey: "mission:1",
+      },
+      {
+        eventType: "CATEGORY_COMPLETED",
+        idempotencyKey: "category:wage",
+      },
+      {
+        eventType: "MISSION_COMPLETED",
+        idempotencyKey: "mission:2",
+      },
+    ]);
+
+    expect(profile).toEqual({
+      totalPoints: 4,
+      levelNumber: 5,
+      levelKey: "jacklaw_case_helper",
+      unlockedRewardKeys: [
+        "magnifying_glass",
+        "time_clock_clue",
+        "lunchbox_clue",
+        "pay_envelope_clue",
+        "investigator_vest",
+      ],
+    });
+  });
+
+  it("ignores duplicate source events and keeps install-related signals at zero points", () => {
+    const profile = projectHoneyProfile([
+      {
+        eventType: "MISSION_COMPLETED",
+        idempotencyKey: "mission:1",
+      },
+      {
+        eventType: "MISSION_COMPLETED",
+        idempotencyKey: "mission:1",
+      },
+      {
+        eventType: "INSTALL_PROMPT_ACCEPTED",
+        idempotencyKey: "install:accepted:1",
+      },
+      {
+        eventType: "PUSH_SUBSCRIPTION_ACTIVE",
+        idempotencyKey: "push:active:1",
+      },
+    ]);
+
+    expect(profile.totalPoints).toBe(1);
+    expect(profile.levelNumber).toBe(2);
+    expect(profile.unlockedRewardKeys).toEqual(["magnifying_glass"]);
+    expect(getParticipationPointsForEvent("INSTALL_PROMPT_ACCEPTED")).toBe(0);
+    expect(getParticipationPointsForEvent("PUSH_SUBSCRIPTION_ACTIVE")).toBe(0);
+  });
+
+  it("derives the expected level titles by total participation points", () => {
+    expect(getHoneyLevel(0).key).toBe("new_friend");
+    expect(getHoneyLevel(1).key).toBe("clue_finder");
+    expect(getHoneyLevel(2).key).toBe("time_detective");
+    expect(getHoneyLevel(3).key).toBe("workplace_investigator");
+    expect(getHoneyLevel(4).key).toBe("jacklaw_case_helper");
   });
 
   it("enforces the role permission matrix", () => {

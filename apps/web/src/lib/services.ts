@@ -1,8 +1,9 @@
 import { getEnv } from "@honey/config";
-import { prisma } from "@honey/db";
+import { prisma, type Prisma } from "@honey/db";
 import {
   answerValueSchema,
   deriveReviewFlags,
+  getParticipationPointsForEvent,
   getLocalDateInTimeZone,
   hashToken as hashDomainToken,
   hashOtp,
@@ -11,10 +12,12 @@ import {
   isOtpExpired,
   normalizePhoneToE164,
   parseRule,
+  projectHoneyProfile,
   rewardDependsOnlyOnParticipation,
   selectMissionQuestions,
   verifyPassword,
   type MissionKind,
+  type ParticipationEventType,
   type PrimitiveAnswer,
   type Rule,
 } from "@honey/domain";
@@ -31,6 +34,153 @@ type RuleValidationContext = {
   stableKeyToDefinitionId: Map<string, string>;
   optionsByStableKey: Map<string, Set<string>>;
 };
+
+async function rebuildHoneyProfile(
+  tx: DbTransaction,
+  input: { clientId: string; organizationId: string },
+) {
+  const events = await tx.participationEvent.findMany({
+    where: {
+      clientId: input.clientId,
+      organizationId: input.organizationId,
+    },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+  });
+
+  const projected = projectHoneyProfile(
+    events.map((event) => ({
+      eventType: event.eventType as ParticipationEventType,
+      idempotencyKey: event.idempotencyKey,
+      points: event.points,
+    })),
+  );
+
+  const previous = await tx.honeyProfile.findUnique({
+    where: { clientId: input.clientId },
+  });
+
+  const driftDetected =
+    previous &&
+    (previous.totalPoints !== projected.totalPoints ||
+      previous.levelNumber !== projected.levelNumber ||
+      previous.levelKey !== projected.levelKey ||
+      JSON.stringify(previous.unlockedRewardKeys) !==
+        JSON.stringify(projected.unlockedRewardKeys));
+
+  await tx.honeyProfile.upsert({
+    where: { clientId: input.clientId },
+    update: {
+      organizationId: input.organizationId,
+      totalPoints: projected.totalPoints,
+      levelNumber: projected.levelNumber,
+      levelKey: projected.levelKey,
+      unlockedRewardKeys: projected.unlockedRewardKeys,
+      currentState: "RESTING",
+      projectionVersion: 1,
+      lastProjectedAt: new Date(),
+      driftDetectedAt: driftDetected ? new Date() : null,
+    },
+    create: {
+      clientId: input.clientId,
+      organizationId: input.organizationId,
+      totalPoints: projected.totalPoints,
+      levelNumber: projected.levelNumber,
+      levelKey: projected.levelKey,
+      unlockedRewardKeys: projected.unlockedRewardKeys,
+      currentState: "RESTING",
+      projectionVersion: 1,
+      lastProjectedAt: new Date(),
+      driftDetectedAt: null,
+    },
+  });
+
+  return projected;
+}
+
+async function syncHoneyRewardGrants(
+  tx: DbTransaction,
+  input: {
+    clientId: string;
+    organizationId: string;
+    sourceParticipationEventId: string;
+    unlockedRewardKeys: string[];
+  },
+) {
+  if (input.unlockedRewardKeys.length === 0) {
+    return;
+  }
+
+  const rewardDefinitions = await tx.rewardDefinition.findMany({
+    where: {
+      organizationId: input.organizationId,
+      rewardKey: {
+        in: input.unlockedRewardKeys,
+      },
+    },
+  });
+
+  for (const reward of rewardDefinitions) {
+    await tx.rewardGrant.upsert({
+      where: {
+        clientId_rewardDefinitionId: {
+          clientId: input.clientId,
+          rewardDefinitionId: reward.id,
+        },
+      },
+      update: {
+        sourceParticipationEventId: input.sourceParticipationEventId,
+      },
+      create: {
+        clientId: input.clientId,
+        rewardDefinitionId: reward.id,
+        sourceProgressEventId: input.sourceParticipationEventId,
+        sourceParticipationEventId: input.sourceParticipationEventId,
+      },
+    });
+  }
+}
+
+async function recordParticipationEvent(
+  tx: DbTransaction,
+  input: {
+    clientId: string;
+    organizationId: string;
+    eventType: ParticipationEventType;
+    sourceType: string;
+    sourceId: string;
+    idempotencyKey: string;
+    metadataJson?: Record<string, unknown>;
+  },
+) {
+  const event = await tx.participationEvent.upsert({
+    where: { idempotencyKey: input.idempotencyKey },
+    update: {},
+    create: {
+      organizationId: input.organizationId,
+      clientId: input.clientId,
+      eventType: input.eventType,
+      points: getParticipationPointsForEvent(input.eventType),
+      sourceType: input.sourceType,
+      sourceId: input.sourceId,
+      idempotencyKey: input.idempotencyKey,
+      metadataJson: input.metadataJson as Prisma.InputJsonValue | undefined,
+    },
+  });
+
+  const profile = await rebuildHoneyProfile(tx, {
+    clientId: input.clientId,
+    organizationId: input.organizationId,
+  });
+
+  await syncHoneyRewardGrants(tx, {
+    clientId: input.clientId,
+    organizationId: input.organizationId,
+    sourceParticipationEventId: event.id,
+    unlockedRewardKeys: profile.unlockedRewardKeys,
+  });
+
+  return { event, profile };
+}
 
 export async function getInvitationPreview(token: string) {
   const invitation = await prisma.invitation.findUnique({
@@ -271,37 +421,48 @@ export async function completeOnboarding(input: {
   timeZone: string;
   locale: Locale;
 }) {
-  const previous = await prisma.client.findUniqueOrThrow({
-    where: { id: input.clientId },
-  });
+  return prisma.$transaction(async (tx) => {
+    const previous = await tx.client.findUniqueOrThrow({
+      where: { id: input.clientId },
+    });
 
-  const client = await prisma.client.update({
-    where: { id: input.clientId },
-    data: {
-      timeZone: input.timeZone,
-      locale: input.locale,
-      onboardingCompletedAt: new Date(),
-    },
-  });
-
-  if (previous.timeZone !== input.timeZone) {
-    await prisma.auditEvent.create({
+    const client = await tx.client.update({
+      where: { id: input.clientId },
       data: {
-        organizationId: previous.organizationId,
-        actorType: "CLIENT",
-        actorId: previous.id,
-        action: "CLIENT_TIME_ZONE_CHANGED",
-        targetType: "CLIENT",
-        targetId: previous.id,
-        metadataJson: {
-          previousTimeZone: previous.timeZone,
-          nextTimeZone: input.timeZone,
-        },
+        timeZone: input.timeZone,
+        locale: input.locale,
+        onboardingCompletedAt: new Date(),
       },
     });
-  }
 
-  return client;
+    if (previous.timeZone !== input.timeZone) {
+      await tx.auditEvent.create({
+        data: {
+          organizationId: previous.organizationId,
+          actorType: "CLIENT",
+          actorId: previous.id,
+          action: "CLIENT_TIME_ZONE_CHANGED",
+          targetType: "CLIENT",
+          targetId: previous.id,
+          metadataJson: {
+            previousTimeZone: previous.timeZone,
+            nextTimeZone: input.timeZone,
+          },
+        },
+      });
+    }
+
+    await recordParticipationEvent(tx, {
+      clientId: client.id,
+      organizationId: client.organizationId,
+      eventType: "ONBOARDING_COMPLETED",
+      sourceType: "CLIENT",
+      sourceId: client.id,
+      idempotencyKey: `onboarding_completed:${client.id}`,
+    });
+
+    return client;
+  });
 }
 
 function buildMissionRequestHash(input: {
@@ -1197,41 +1358,15 @@ export async function saveMissionAnswer(input: {
         },
       });
 
-      const progressIdempotencyKey = `mission_completed:${mission.id}`;
-      const progressEvent = await tx.progressEvent.upsert({
-        where: { idempotencyKey: progressIdempotencyKey },
-        update: {},
-        create: {
+      if (rewardDependsOnlyOnParticipation(mission.requestedSize)) {
+        await recordParticipationEvent(tx, {
           clientId: mission.clientId,
+          organizationId: mission.organizationId,
           eventType: "MISSION_COMPLETED",
-          points: 1,
           sourceType: "MISSION",
           sourceId: mission.id,
-          idempotencyKey: progressIdempotencyKey,
-        },
-      });
-
-      if (rewardDependsOnlyOnParticipation(mission.requestedSize)) {
-        const reward = await tx.rewardDefinition.findUnique({
-          where: { rewardKey: "neutral_clue" },
+          idempotencyKey: `mission_completed:${mission.id}`,
         });
-
-        if (reward) {
-          await tx.rewardGrant.upsert({
-            where: {
-              clientId_rewardDefinitionId: {
-                clientId: mission.clientId,
-                rewardDefinitionId: reward.id,
-              },
-            },
-            update: {},
-            create: {
-              clientId: mission.clientId,
-              rewardDefinitionId: reward.id,
-              sourceProgressEventId: progressEvent.id,
-            },
-          });
-        }
       }
 
       const staffRecipients = await tx.staffUser.findMany({

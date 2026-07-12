@@ -9,6 +9,7 @@
   "dependencies": {
     "@honey/config": "workspace:*",
     "@honey/db": "workspace:*",
+    "@honey/observability": "workspace:*",
     "tsx": "4.20.6"
   }
 }

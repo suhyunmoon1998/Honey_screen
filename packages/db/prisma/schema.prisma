@@ -58,6 +58,19 @@ enum ReviewFlagState {
   DISMISSED
 }
 
+enum HoneyState {
+  NEUTRAL
+  INVESTIGATING
+  RESTING
+  MISSION_COMPLETE
+}
+
+enum PushSubscriptionStatus {
+  ACTIVE
+  REVOKED
+  INVALID
+}
+
 model Organization {
   id                   String               @id @default(cuid())
   name                 String
@@ -72,6 +85,10 @@ model Organization {
   outboxEvents         OutboxEvent[]
   notifications        InAppNotification[]
   auditEvents          AuditEvent[]
+  participationEvents  ParticipationEvent[]
+  honeyProfiles        HoneyProfile[]
+  deviceInstallations  DeviceInstallation[]
+  pushSubscriptions    PushSubscription[]
 }
 
 model StaffUser {
@@ -116,6 +133,10 @@ model Client {
   clarifications        ClarificationRequest[]
   progressEvents        ProgressEvent[]
   rewardGrants          RewardGrant[]
+  participationEvents   ParticipationEvent[]
+  honeyProfile          HoneyProfile?
+  deviceInstallations   DeviceInstallation[]
+  pushSubscriptions     PushSubscription[]
 }
 
 model Invitation {
@@ -350,6 +371,81 @@ model ProgressEvent {
   client         Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
 
+model ParticipationEvent {
+  id             String       @id @default(cuid())
+  organizationId String
+  clientId       String
+  eventType      String
+  points         Int
+  sourceType     String
+  sourceId       String
+  idempotencyKey String       @unique
+  metadataJson   Json?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client         Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  rewardGrants   RewardGrant[] @relation("RewardGrantSourceParticipationEvent")
+
+  @@index([clientId, createdAt])
+  @@index([organizationId, clientId, createdAt])
+}
+
+model HoneyProfile {
+  clientId            String       @id
+  organizationId      String
+  totalPoints         Int          @default(0)
+  levelNumber         Int          @default(1)
+  levelKey            String       @default("new_friend")
+  currentState        HoneyState   @default(NEUTRAL)
+  unlockedRewardKeys  String[]     @default([])
+  projectionVersion   Int          @default(1)
+  lastProjectedAt     DateTime     @default(now())
+  driftDetectedAt     DateTime?
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client              Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, clientId])
+}
+
+model DeviceInstallation {
+  id                     String       @id @default(cuid())
+  organizationId         String
+  clientId               String
+  anonymousDeviceIdHash  String       @unique
+  platformHint           String?
+  standaloneLaunchAt     DateTime?
+  firstSeenAt            DateTime     @default(now())
+  lastSeenAt             DateTime     @default(now())
+  organization           Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client                 Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  pushSubscriptions      PushSubscription[]
+
+  @@index([organizationId, clientId])
+}
+
+model PushSubscription {
+  id                    String                 @id @default(cuid())
+  organizationId        String
+  clientId              String
+  deviceInstallationId  String
+  endpointHash          String                 @unique
+  endpointCiphertext    String
+  endpointNonce         String
+  p256dhCiphertext      String
+  p256dhNonce           String
+  authCiphertext        String
+  authNonce             String
+  encryptionKeyVersion  Int
+  status                PushSubscriptionStatus @default(ACTIVE)
+  createdAt             DateTime               @default(now())
+  revokedAt             DateTime?
+  organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client                Client                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  deviceInstallation    DeviceInstallation     @relation(fields: [deviceInstallationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, clientId, status])
+}
+
 model ReviewFlag {
   id                String          @id @default(cuid())
   organizationId    String
@@ -411,9 +507,11 @@ model RewardGrant {
   clientId         String
   rewardDefinitionId String
   sourceProgressEventId String
+  sourceParticipationEventId String?
   createdAt        DateTime         @default(now())
   client           Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
   rewardDefinition RewardDefinition @relation(fields: [rewardDefinitionId], references: [id], onDelete: Cascade)
+  sourceParticipationEvent ParticipationEvent? @relation("RewardGrantSourceParticipationEvent", fields: [sourceParticipationEventId], references: [id], onDelete: SetNull)
 
   @@unique([clientId, rewardDefinitionId])
 }

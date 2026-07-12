@@ -1,5 +1,6 @@
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { Buffer } from "node:buffer";
 import { config as loadEnv } from "dotenv";
 import { z } from "zod";
 
@@ -14,6 +15,14 @@ export function isDemoContentAllowedForEnvironment(input: {
     input.allowDemoContent &&
     (input.nodeEnv === "development" || input.nodeEnv === "test")
   );
+}
+
+export function isPushEncryptionKeyValid(value: string) {
+  try {
+    return Buffer.from(value, "base64").byteLength === 32;
+  } catch {
+    return false;
+  }
 }
 
 const envSchema = z
@@ -43,6 +52,14 @@ const envSchema = z
       .string()
       .transform((value) => value === "true")
       .default(false),
+    PUSH_DELIVERY_ENABLED: z
+      .string()
+      .transform((value) => value === "true")
+      .default(false),
+    PUSH_ENCRYPTION_KEY_B64: z.string().optional(),
+    PUSH_ENCRYPTION_KEY_VERSION: z.coerce.number().int().positive().default(1),
+    VAPID_PUBLIC_KEY: z.string().optional(),
+    VAPID_PRIVATE_KEY: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.NODE_ENV === "production" && data.DEV_OTP_ENABLED) {
@@ -75,6 +92,46 @@ const envSchema = z
           "ALLOW_DEMO_CONTENT may be true only in development or test environments.",
       });
     }
+
+    if (
+      data.PUSH_ENCRYPTION_KEY_B64 &&
+      !isPushEncryptionKeyValid(data.PUSH_ENCRYPTION_KEY_B64)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["PUSH_ENCRYPTION_KEY_B64"],
+        message: "PUSH_ENCRYPTION_KEY_B64 must decode to exactly 32 bytes.",
+      });
+    }
+
+    if (data.NODE_ENV === "production" && data.PUSH_DELIVERY_ENABLED) {
+      if (!data.PUSH_ENCRYPTION_KEY_B64) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["PUSH_ENCRYPTION_KEY_B64"],
+          message:
+            "PUSH_ENCRYPTION_KEY_B64 is required when push delivery is enabled in production.",
+        });
+      }
+
+      if (!data.VAPID_PUBLIC_KEY) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["VAPID_PUBLIC_KEY"],
+          message:
+            "VAPID_PUBLIC_KEY is required when push delivery is enabled in production.",
+        });
+      }
+
+      if (!data.VAPID_PRIVATE_KEY) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["VAPID_PRIVATE_KEY"],
+          message:
+            "VAPID_PRIVATE_KEY is required when push delivery is enabled in production.",
+        });
+      }
+    }
   });
 
 let cachedEnv: z.infer<typeof envSchema> | null = null;
@@ -85,4 +142,8 @@ export function getEnv() {
   }
 
   return cachedEnv;
+}
+
+export function resetEnvForTests() {
+  cachedEnv = null;
 }

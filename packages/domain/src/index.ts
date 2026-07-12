@@ -12,6 +12,30 @@ export type Locale = "es" | "en";
 export type MissionKind = "QUICK" | "STANDARD" | "FULL";
 export type QuestionStatus = "APPROVED" | "DRAFT" | "RETIRED";
 export type PrimitiveAnswer = boolean | string | number | null;
+export type HoneyLevelKey =
+  | "new_friend"
+  | "clue_finder"
+  | "time_detective"
+  | "workplace_investigator"
+  | "jacklaw_case_helper";
+export type HoneyRewardKey =
+  | "magnifying_glass"
+  | "time_clock_clue"
+  | "lunchbox_clue"
+  | "pay_envelope_clue"
+  | "investigator_vest";
+export type ParticipationEventType =
+  | "MISSION_COMPLETED"
+  | "ONBOARDING_COMPLETED"
+  | "CONTACT_PREFERENCE_COMPLETED"
+  | "CATEGORY_COMPLETED"
+  | "EVIDENCE_UPLOAD_CLEAN"
+  | "INSTALL_PROMPT_AVAILABLE"
+  | "INSTALL_PROMPT_ACCEPTED"
+  | "APPINSTALLED_OBSERVED"
+  | "STANDALONE_LAUNCH_OBSERVED"
+  | "PUSH_SUBSCRIPTION_ACTIVE"
+  | "NOTIFICATION_PERMISSION_GRANTED";
 
 export type RulePredicate =
   | {
@@ -98,6 +122,19 @@ export type RuleEvaluationContext = {
 
 export type ReviewFlagResult = {
   flagType: string;
+};
+
+export type ParticipationProjectionEvent = {
+  eventType: ParticipationEventType;
+  idempotencyKey: string;
+  points?: number;
+};
+
+export type HoneyProfileProjection = {
+  totalPoints: number;
+  levelNumber: number;
+  levelKey: HoneyLevelKey;
+  unlockedRewardKeys: HoneyRewardKey[];
 };
 
 export type SelectionInput = {
@@ -608,6 +645,152 @@ export function deriveReviewFlags(
 
 export function rewardDependsOnlyOnParticipation(completedQuestions: number) {
   return completedQuestions >= 3;
+}
+
+export const HONEY_LEVELS: Array<{
+  levelNumber: number;
+  minPoints: number;
+  key: HoneyLevelKey;
+  titleEs: string;
+  titleEn: string;
+}> = [
+  {
+    levelNumber: 1,
+    minPoints: 0,
+    key: "new_friend",
+    titleEs: "Nuevo companero",
+    titleEn: "New Friend",
+  },
+  {
+    levelNumber: 2,
+    minPoints: 1,
+    key: "clue_finder",
+    titleEs: "Buscador de pistas",
+    titleEn: "Clue Finder",
+  },
+  {
+    levelNumber: 3,
+    minPoints: 2,
+    key: "time_detective",
+    titleEs: "Detective del tiempo",
+    titleEn: "Time Detective",
+  },
+  {
+    levelNumber: 4,
+    minPoints: 3,
+    key: "workplace_investigator",
+    titleEs: "Investigador del trabajo",
+    titleEn: "Workplace Investigator",
+  },
+  {
+    levelNumber: 5,
+    minPoints: 4,
+    key: "jacklaw_case_helper",
+    titleEs: "Ayudante de casos JACKLAW",
+    titleEn: "JACKLAW Case Helper",
+  },
+];
+
+export const HONEY_REWARD_DEFINITIONS: Array<{
+  rewardKey: HoneyRewardKey;
+  unlockAtPoints: number;
+  nameEs: string;
+  nameEn: string;
+}> = [
+  {
+    rewardKey: "magnifying_glass",
+    unlockAtPoints: 1,
+    nameEs: "Lupa de investigacion",
+    nameEn: "Investigation magnifying glass",
+  },
+  {
+    rewardKey: "time_clock_clue",
+    unlockAtPoints: 2,
+    nameEs: "Pista del reloj",
+    nameEn: "Time-clock clue",
+  },
+  {
+    rewardKey: "lunchbox_clue",
+    unlockAtPoints: 3,
+    nameEs: "Pista de lonchera",
+    nameEn: "Lunchbox clue",
+  },
+  {
+    rewardKey: "pay_envelope_clue",
+    unlockAtPoints: 4,
+    nameEs: "Pista de sobre de pago",
+    nameEn: "Pay-envelope clue",
+  },
+  {
+    rewardKey: "investigator_vest",
+    unlockAtPoints: 4,
+    nameEs: "Chaleco de investigacion",
+    nameEn: "Investigator vest",
+  },
+];
+
+const PARTICIPATION_POINTS: Record<ParticipationEventType, number> = {
+  MISSION_COMPLETED: 1,
+  ONBOARDING_COMPLETED: 1,
+  CONTACT_PREFERENCE_COMPLETED: 1,
+  CATEGORY_COMPLETED: 1,
+  EVIDENCE_UPLOAD_CLEAN: 1,
+  INSTALL_PROMPT_AVAILABLE: 0,
+  INSTALL_PROMPT_ACCEPTED: 0,
+  APPINSTALLED_OBSERVED: 0,
+  STANDALONE_LAUNCH_OBSERVED: 0,
+  PUSH_SUBSCRIPTION_ACTIVE: 0,
+  NOTIFICATION_PERMISSION_GRANTED: 0,
+};
+
+export function getParticipationPointsForEvent(
+  eventType: ParticipationEventType,
+) {
+  return PARTICIPATION_POINTS[eventType];
+}
+
+export function getHoneyLevel(totalPoints: number) {
+  const safePoints = Math.max(0, totalPoints);
+
+  return (
+    [...HONEY_LEVELS]
+      .reverse()
+      .find((level) => safePoints >= level.minPoints) ?? HONEY_LEVELS[0]!
+  );
+}
+
+export function getUnlockedHoneyRewardKeys(totalPoints: number) {
+  return HONEY_REWARD_DEFINITIONS.filter(
+    (reward) => totalPoints >= reward.unlockAtPoints,
+  ).map((reward) => reward.rewardKey);
+}
+
+export function projectHoneyProfile(
+  events: ParticipationProjectionEvent[],
+): HoneyProfileProjection {
+  const seenIdempotencyKeys = new Set<string>();
+  let totalPoints = 0;
+
+  for (const event of events) {
+    if (seenIdempotencyKeys.has(event.idempotencyKey)) {
+      continue;
+    }
+
+    seenIdempotencyKeys.add(event.idempotencyKey);
+    totalPoints += Math.max(
+      0,
+      event.points ?? getParticipationPointsForEvent(event.eventType),
+    );
+  }
+
+  const level = getHoneyLevel(totalPoints);
+
+  return {
+    totalPoints,
+    levelNumber: level.levelNumber,
+    levelKey: level.key,
+    unlockedRewardKeys: getUnlockedHoneyRewardKeys(totalPoints),
+  };
 }
 
 export function canAccessRole(role: Role, requiredRole: Role) {

@@ -1,6 +1,37 @@
+import { execFileSync } from "node:child_process";
 import { prisma, seedDatabase } from "@honey/db";
 
+let schemaEnsured = false;
+
+async function ensureDatabaseSchema() {
+  if (schemaEnsured) {
+    return;
+  }
+
+  execFileSync(
+    "pnpm",
+    ["--filter", "@honey/db", "prisma", "migrate", "deploy"],
+    {
+      cwd: process.cwd(),
+      env: process.env,
+      stdio: "ignore",
+    },
+  );
+
+  schemaEnsured = true;
+}
+
 export async function resetDatabase() {
+  await ensureDatabaseSchema();
+  await prisma.notificationDeliveryAttempt.deleteMany();
+  await prisma.reminderOccurrence.deleteMany();
+  await prisma.notificationPreference.deleteMany();
+  await prisma.notificationIntent.deleteMany();
+  await prisma.notificationProviderReceipt.deleteMany();
+  await prisma.pushSubscription.deleteMany();
+  await prisma.deviceInstallation.deleteMany();
+  await prisma.honeyProfile.deleteMany();
+  await prisma.participationEvent.deleteMany();
   await prisma.questionOption.deleteMany();
   await prisma.branchRule.deleteMany();
   await prisma.reviewFlagRule.deleteMany();

@@ -43,6 +43,11 @@ export function InvitationFlow({ token, locale, messages }: Props) {
       return;
     }
 
+    if (data.redirectTo) {
+      window.location.href = data.redirectTo;
+      return;
+    }
+
     setDevCode(data.devCode ?? null);
     setStep("verify");
     setStatus(locale === "es" ? "Codigo listo." : "Code ready.");
@@ -85,7 +90,7 @@ export function InvitationFlow({ token, locale, messages }: Props) {
 
       {step === "request" ? (
         <>
-          <label className="flex items-start gap-3 rounded-2xl border border-line bg-white p-4">
+          <label className="flex items-start gap-3 rounded-2xl border border-line bg-card-2 p-4">
             <input
               checked={acceptedPrivacy}
               onChange={(event) => setAcceptedPrivacy(event.target.checked)}
@@ -93,7 +98,7 @@ export function InvitationFlow({ token, locale, messages }: Props) {
             />
             <span>{messages.privacyConsent}</span>
           </label>
-          <label className="flex items-start gap-3 rounded-2xl border border-line bg-white p-4">
+          <label className="flex items-start gap-3 rounded-2xl border border-line bg-card-2 p-4">
             <input
               checked={acceptedMessages}
               onChange={(event) => setAcceptedMessages(event.target.checked)}
@@ -112,7 +117,7 @@ export function InvitationFlow({ token, locale, messages }: Props) {
       ) : (
         <>
           {devCode ? (
-            <div className="rounded-2xl border border-dashed border-accent bg-white px-4 py-3 text-sm">
+            <div className="rounded-2xl border border-dashed border-accent bg-card-2 px-4 py-3 text-sm">
               Codigo de desarrollo: <strong>{devCode}</strong>
             </div>
           ) : null}

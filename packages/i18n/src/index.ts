@@ -21,17 +21,60 @@ const messages = {
     dashboardTitle: "Honey esta lista para investigar contigo",
     dashboardBody:
       "Tu progreso se guarda despues de cada respuesta para que puedas pausar y regresar sin perder informacion.",
+    dashboardHubLabel: "Centro de misiones Honey",
+    dashboardBriefLabel: "Resumen de campo",
+    dashboardMobileReady: "Listo para movil",
+    dashboardSafePace: "Ritmo diario seguro",
+    dashboardConsoleLabel: "Consola de mision",
+    dashboardChooseRoute: "Elige la ruta de hoy",
+    dashboardDailyCapLabel: "Limite diario",
+    dashboardActiveSlotLabel: "Mision activa",
+    dashboardActiveSlotBody:
+      "Retoma donde te quedaste. Tu progreso sigue vinculado a la mision actual.",
+    dashboardMissionSelectLabel: "Seleccion de mision",
+    dashboardMissionCardBody:
+      "Empieza un paso guiado de admision con Honey acompanandote.",
+    dashboardComfortLabel: "Comodidad",
+    dashboardComfortBody:
+      "Sin perder rachas. Sin cuenta regresiva. Solo progreso diario estable.",
+    dashboardPrivacyLabel: "Privacidad",
+    dashboardPrivacyBody:
+      "Los datos sensibles no aparecen en recordatorios push ni en respuestas almacenadas en cache.",
     quickMission: "Mision rapida de 3 preguntas",
     standardMission: "Mision estandar de 5 preguntas",
     fullMission: "Mision completa de hasta 10 preguntas",
     resumeMission: "Reanudar mision",
     missionProgress: "Mision {current} de {total}",
+    missionQuestionLabel: "Pregunta de campo",
     missionSaveBody:
       "Honey guarda cada respuesta en el servidor inmediatamente.",
     dailyCapReached:
       "Ya completaste las preguntas disponibles por hoy. Puedes regresar cuando cambie tu fecha local.",
     completeMission: "Mision completada",
     rewardTitle: "Honey gano una pista por tu participacion",
+    notificationSettingsTitle: "Recordatorios de Honey",
+    notificationSettingsBody:
+      "Honey puede enviarte un recordatorio corto cuando haya preguntas disponibles. El mensaje no incluira informacion sobre tu trabajo ni tus respuestas.",
+    notificationEnable: "Activar recordatorios",
+    notificationDisable: "Desactivar recordatorios",
+    notificationDisabledBody:
+      "No recibiras recordatorios. Tus respuestas y tu progreso siguen guardados.",
+    notificationPermissionDenied:
+      "Tu navegador bloqueo los recordatorios. Puedes seguir usando la aplicacion normalmente.",
+    notificationPreferredTime: "A que hora prefieres recibir un recordatorio?",
+    notificationBrowserUnsupported:
+      "Este navegador no puede mostrar recordatorios push.",
+    notificationStatusPermissionDefault: "Permiso del navegador pendiente",
+    notificationStatusPermissionGranted: "Permiso del navegador concedido",
+    notificationStatusPermissionDenied: "Permiso del navegador bloqueado",
+    notificationStatusSubscriptionActive: "Suscripcion activa en este momento",
+    notificationStatusSubscriptionMissing: "Sin suscripcion activa",
+    notificationStatusPreferenceEnabled: "Recordatorios activados",
+    notificationStatusPreferenceDisabled: "Recordatorios desactivados",
+    notificationStatusSimulated:
+      "Entorno simulado de desarrollo o prueba para push",
+    notificationTimeValidation:
+      "Selecciona una hora permitida fuera del horario de silencio.",
     staffNotifications: "Notificaciones del equipo",
     signOut: "Cerrar sesion",
     switchLanguage: "English",
@@ -53,16 +96,57 @@ const messages = {
     dashboardTitle: "Honey is ready to investigate with you",
     dashboardBody:
       "Your progress is saved after each answer so you can pause and come back without losing information.",
+    dashboardHubLabel: "Honey Mission Hub",
+    dashboardBriefLabel: "Field Brief",
+    dashboardMobileReady: "Mobile Ready",
+    dashboardSafePace: "Daily Safe Pace",
+    dashboardConsoleLabel: "Mission Console",
+    dashboardChooseRoute: "Choose today's route",
+    dashboardDailyCapLabel: "Daily Cap",
+    dashboardActiveSlotLabel: "Active Slot",
+    dashboardActiveSlotBody:
+      "Pick up where you left off. Your progress stays tied to the current mission slot.",
+    dashboardMissionSelectLabel: "Mission Select",
+    dashboardMissionCardBody:
+      "Start a focused intake step with Honey guiding the flow.",
+    dashboardComfortLabel: "Comfort",
+    dashboardComfortBody:
+      "No streak loss. No pressure countdown. Steady daily progress only.",
+    dashboardPrivacyLabel: "Privacy",
+    dashboardPrivacyBody:
+      "Sensitive details stay out of push text and cached responses.",
     quickMission: "Quick 3-question mission",
     standardMission: "Standard 5-question mission",
     fullMission: "Full mission with up to 10 questions",
     resumeMission: "Resume mission",
     missionProgress: "Mission {current} of {total}",
+    missionQuestionLabel: "Field question",
     missionSaveBody: "Honey saves each answer on the server right away.",
     dailyCapReached:
       "You have already completed the questions available for today. You can come back when your local date changes.",
     completeMission: "Mission completed",
     rewardTitle: "Honey earned a clue for your participation",
+    notificationSettingsTitle: "Honey reminders",
+    notificationSettingsBody:
+      "Honey can send a short reminder when questions are available. The message will not include information about your job or your answers.",
+    notificationEnable: "Enable Honey reminders",
+    notificationDisable: "Turn off reminders",
+    notificationDisabledBody:
+      "You will not receive reminders. Your answers and progress still stay saved.",
+    notificationPermissionDenied:
+      "Your browser blocked reminders. You can keep using the application normally.",
+    notificationPreferredTime: "What time would you prefer a reminder?",
+    notificationBrowserUnsupported: "This browser cannot show push reminders.",
+    notificationStatusPermissionDefault: "Browser permission not requested yet",
+    notificationStatusPermissionGranted: "Browser permission granted",
+    notificationStatusPermissionDenied: "Browser permission blocked",
+    notificationStatusSubscriptionActive: "Active subscription on file",
+    notificationStatusSubscriptionMissing: "No active subscription",
+    notificationStatusPreferenceEnabled: "Reminders enabled",
+    notificationStatusPreferenceDisabled: "Reminders disabled",
+    notificationStatusSimulated:
+      "Simulated development or test environment for push",
+    notificationTimeValidation: "Choose an allowed time outside quiet hours.",
     staffNotifications: "Team notifications",
     signOut: "Sign out",
     switchLanguage: "Español",

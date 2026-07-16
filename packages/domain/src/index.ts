@@ -1,9 +1,13 @@
 import {
+  createCipheriv,
+  createDecipheriv,
   createHash,
   randomInt,
+  randomBytes,
   scryptSync,
   timingSafeEqual,
 } from "node:crypto";
+import { Temporal } from "@js-temporal/polyfill";
 import { z } from "zod";
 
 export type Role = "CLIENT" | "STAFF" | "ADMIN";
@@ -36,6 +40,24 @@ export type ParticipationEventType =
   | "STANDALONE_LAUNCH_OBSERVED"
   | "PUSH_SUBSCRIPTION_ACTIVE"
   | "NOTIFICATION_PERMISSION_GRANTED";
+export type NotificationPurpose = "MISSION_REMINDER";
+export type ReminderOccurrenceStatus =
+  | "PLANNED"
+  | "INTENT_CREATED"
+  | "SUPPRESSED"
+  | "EXPIRED"
+  | "CANCELLED";
+export type ReminderSuppressionReason =
+  | "preference_disabled"
+  | "no_active_subscription"
+  | "mission_completed"
+  | "daily_cap_exhausted"
+  | "no_eligible_questions"
+  | "quiet_hours"
+  | "account_restricted"
+  | "occurrence_expired"
+  | "time_zone_changed"
+  | "duplicate_occurrence";
 
 export type RulePredicate =
   | {
@@ -241,12 +263,67 @@ export function hashToken(value: string) {
   return createHash("sha256").update(value).digest("hex");
 }
 
+export function hashOpaqueValue(value: string) {
+  return hashToken(value);
+}
+
 export function hashOtp(value: string) {
   return hashToken(value);
 }
 
 export function generateOtpCode() {
   return `${randomInt(100000, 999999)}`;
+}
+
+export type SmsSendResult =
+  | { ok: true; providerReference: string }
+  | { ok: false; errorCode: string; message: string };
+
+export async function sendSms(input: {
+  accountSid: string;
+  authToken: string;
+  fromNumber: string;
+  toE164: string;
+  body: string;
+}): Promise<SmsSendResult> {
+  const credentials = Buffer.from(
+    `${input.accountSid}:${input.authToken}`,
+  ).toString("base64");
+
+  const response = await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${input.accountSid}/Messages.json`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        To: input.toE164,
+        From: input.fromNumber,
+        Body: input.body,
+      }),
+    },
+  );
+
+  const data = (await response.json().catch(() => null)) as {
+    sid?: string;
+    code?: number;
+    message?: string;
+  } | null;
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      errorCode: data?.code ? String(data.code) : String(response.status),
+      message: data?.message ?? "Twilio request failed.",
+    };
+  }
+
+  return {
+    ok: true,
+    providerReference: data?.sid ?? "",
+  };
 }
 
 export function isInvitationExpired(expiresAt: Date, now = new Date()) {
@@ -281,14 +358,150 @@ export function getRequestedMissionSize(
 }
 
 export function getLocalDateInTimeZone(date: Date, timeZone: string) {
-  const formatter = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
+  return Temporal.Instant.from(date.toISOString())
+    .toZonedDateTimeISO(timeZone)
+    .toPlainDate()
+    .toString();
+}
+
+const localTimePattern = /^(?<hour>[01]\d|2[0-3]):(?<minute>[0-5]\d)$/;
+
+function parseLocalTimeParts(value: string) {
+  const match = localTimePattern.exec(value);
+
+  if (!match?.groups) {
+    throw new Error("INVALID_LOCAL_TIME");
+  }
+
+  return {
+    hour: Number(match.groups.hour),
+    minute: Number(match.groups.minute),
+  };
+}
+
+function toMinutesSinceMidnight(value: string) {
+  const { hour, minute } = parseLocalTimeParts(value);
+  return hour * 60 + minute;
+}
+
+export function isValidLocalTime(value: string) {
+  return localTimePattern.test(value);
+}
+
+export function isLocalTimeInQuietHours(input: {
+  localTime: string;
+  quietHoursStart: string;
+  quietHoursEnd: string;
+}) {
+  const time = toMinutesSinceMidnight(input.localTime);
+  const start = toMinutesSinceMidnight(input.quietHoursStart);
+  const end = toMinutesSinceMidnight(input.quietHoursEnd);
+
+  if (start === end) {
+    throw new Error("QUIET_HOURS_EQUAL");
+  }
+
+  if (start < end) {
+    return time >= start && time < end;
+  }
+
+  return time >= start || time < end;
+}
+
+export function assertPreferredReminderTimeAllowed(input: {
+  preferredLocalTime: string;
+  quietHoursStart: string;
+  quietHoursEnd: string;
+  allowedReminderTimes?: string[];
+}) {
+  if (!isValidLocalTime(input.preferredLocalTime)) {
+    throw new Error("INVALID_PREFERRED_LOCAL_TIME");
+  }
+
+  if (
+    input.allowedReminderTimes &&
+    !input.allowedReminderTimes.includes(input.preferredLocalTime)
+  ) {
+    throw new Error("PREFERRED_TIME_NOT_ALLOWED");
+  }
+
+  if (
+    isLocalTimeInQuietHours({
+      localTime: input.preferredLocalTime,
+      quietHoursStart: input.quietHoursStart,
+      quietHoursEnd: input.quietHoursEnd,
+    })
+  ) {
+    throw new Error("PREFERRED_TIME_IN_QUIET_HOURS");
+  }
+}
+
+export function resolveScheduledInstantForLocalDate(input: {
+  localDate: string;
+  localTime: string;
+  timeZone: string;
+}) {
+  const { hour, minute } = parseLocalTimeParts(input.localTime);
+
+  return new Date(
+    Temporal.ZonedDateTime.from(
+      {
+        timeZone: input.timeZone,
+        year: Number(input.localDate.slice(0, 4)),
+        month: Number(input.localDate.slice(5, 7)),
+        day: Number(input.localDate.slice(8, 10)),
+        hour,
+        minute,
+      },
+      {
+        disambiguation: "compatible",
+      },
+    ).toInstant().epochMilliseconds,
+  );
+}
+
+export function getLocalTimeInTimeZone(date: Date, timeZone: string) {
+  return Temporal.Instant.from(date.toISOString())
+    .toZonedDateTimeISO(timeZone)
+    .toPlainTime()
+    .toString({
+      smallestUnit: "minute",
+    });
+}
+
+export function getNextLocalDate(localDate: string) {
+  return Temporal.PlainDate.from(localDate).add({ days: 1 }).toString();
+}
+
+export function deriveReminderWindow(input: {
+  localDate: string;
+  preferredLocalTime: string;
+  timeZone: string;
+  catchUpWindowMinutes: number;
+}) {
+  const scheduledFor = resolveScheduledInstantForLocalDate({
+    localDate: input.localDate,
+    localTime: input.preferredLocalTime,
+    timeZone: input.timeZone,
   });
 
-  return formatter.format(date);
+  const nextLocalDateStart = resolveScheduledInstantForLocalDate({
+    localDate: getNextLocalDate(input.localDate),
+    localTime: "00:00",
+    timeZone: input.timeZone,
+  });
+
+  const catchUpExpiry = new Date(
+    scheduledFor.getTime() + input.catchUpWindowMinutes * 60 * 1000,
+  );
+
+  return {
+    scheduledFor,
+    expiresAt:
+      catchUpExpiry.getTime() < nextLocalDateStart.getTime()
+        ? catchUpExpiry
+        : nextLocalDateStart,
+  };
 }
 
 export function selectApprovedQuestions(
@@ -812,4 +1025,37 @@ export function verifyPassword(password: string, expectedHash: string) {
   const actual = Buffer.from(hashPassword(password), "hex");
   const expected = Buffer.from(expectedHash, "hex");
   return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
+
+export function encryptOpaqueValue(input: { key: Buffer; value: string }) {
+  const nonce = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", input.key, nonce);
+  const ciphertext = Buffer.concat([
+    cipher.update(input.value, "utf8"),
+    cipher.final(),
+  ]);
+  const tag = cipher.getAuthTag();
+
+  return {
+    ciphertext: Buffer.concat([ciphertext, tag]).toString("base64"),
+    nonce: nonce.toString("base64"),
+  };
+}
+
+export function decryptOpaqueValue(input: {
+  key: Buffer;
+  ciphertext: string;
+  nonce: string;
+}) {
+  const payload = Buffer.from(input.ciphertext, "base64");
+  const nonce = Buffer.from(input.nonce, "base64");
+  const ciphertext = payload.subarray(0, payload.length - 16);
+  const tag = payload.subarray(payload.length - 16);
+  const decipher = createDecipheriv("aes-256-gcm", input.key, nonce);
+  decipher.setAuthTag(tag);
+
+  return Buffer.concat([
+    decipher.update(ciphertext),
+    decipher.final(),
+  ]).toString("utf8");
 }

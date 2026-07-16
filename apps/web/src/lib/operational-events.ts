@@ -1,4 +1,3 @@
-import { getEnv } from "@honey/config";
 import {
   createOperationalEvent,
   InMemoryOperationalEventSink,
@@ -10,8 +9,19 @@ import {
 
 export { InMemoryOperationalEventSink };
 
+function getNodeEnv() {
+  switch (process.env.NODE_ENV) {
+    case "production":
+    case "test":
+    case "development":
+      return process.env.NODE_ENV;
+    default:
+      return "development";
+  }
+}
+
 let operationalEventSink: OperationalEventSink =
-  getEnv().NODE_ENV === "development"
+  getNodeEnv() === "development"
     ? new JsonConsoleOperationalEventSink()
     : new NoopOperationalEventSink();
 
@@ -25,7 +35,7 @@ export function setOperationalEventSink(sink: OperationalEventSink) {
 
 export function resetOperationalEventSink() {
   operationalEventSink =
-    getEnv().NODE_ENV === "development"
+    getNodeEnv() === "development"
       ? new JsonConsoleOperationalEventSink()
       : new NoopOperationalEventSink();
 }
@@ -33,7 +43,7 @@ export function resetOperationalEventSink() {
 export async function emitOperationalEvent(event: EmitOperationalEventInput) {
   await operationalEventSink.emit(
     createOperationalEvent(event, {
-      environment: getEnv().NODE_ENV,
+      environment: getNodeEnv(),
     }),
   );
 }

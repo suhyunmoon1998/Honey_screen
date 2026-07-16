@@ -16,3 +16,4 @@ dist
 .turbo
 apps/web/.next
 packages/db/generated
+.vercel

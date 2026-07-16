@@ -1,31 +1,67 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8f3e7;
-  --foreground: #2d1f14;
-  --card: #fffaf2;
-  --accent: #c46d2d;
-  --accent-ink: #fff7ef;
-  --muted: #7a6354;
-  --line: #d9c7b7;
+  /* base surface */
+  --background: #120c22;
+  --foreground: #ece7fb;
+  --card: #1d1733;
+  --card-2: #251c40;
+  --card-3: #2c2350;
+
+  /* arcade duo-tone */
+  --green: #3ee8a8;
+  --green-deep: #1c9d74;
+  --green-ink: #06281c;
+  --purple: #a689ff;
+  --purple-deep: #6a4fd6;
+  --purple-ink: #ede6ff;
+
+  --accent: var(--green);
+  --accent-ink: var(--green-ink);
+
+  --muted: #a99bc9;
+  --line: #362a5c;
+  --line-strong: #4a3b7a;
+
+  --glow-green: rgba(62, 232, 168, 0.28);
+  --glow-purple: rgba(166, 137, 255, 0.28);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
+  --color-card-2: var(--card-2);
+  --color-card-3: var(--card-3);
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
+  --color-green: var(--green);
+  --color-purple: var(--purple);
   --color-muted: var(--muted);
   --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+* {
+  border-color: var(--line);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), sans-serif;
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+    env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
 }
 
 a {
@@ -36,42 +72,119 @@ button,
 input,
 select {
   font: inherit;
+  color: inherit;
+}
+
+input,
+select {
+  accent-color: var(--green);
+  font-size: 16px;
+}
+
+::placeholder {
+  color: var(--muted);
+  opacity: 0.8;
 }
 
 .page-shell {
+  position: relative;
   min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
   background:
+    radial-gradient(circle at 12% -5%, var(--glow-purple), transparent 42%),
+    radial-gradient(circle at 90% 10%, var(--glow-green), transparent 38%),
     radial-gradient(
-      circle at top right,
-      rgba(196, 109, 45, 0.15),
-      transparent 30%
+      circle at 50% 100%,
+      rgba(166, 137, 255, 0.1),
+      transparent 45%
     ),
-    linear-gradient(180deg, #fcf6ed 0%, #f5ecdd 100%);
+    linear-gradient(180deg, #170f2c 0%, #120c22 55%, #0e091b 100%);
+}
+
+/* faint scanline texture for a soft arcade-cabinet feel */
+.page-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.025) 0px,
+    rgba(255, 255, 255, 0.025) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: overlay;
+  opacity: 0.5;
+}
+
+.page-shell > * {
+  position: relative;
 }
 
 .card {
-  background: var(--card);
+  background: linear-gradient(180deg, var(--card-2) 0%, var(--card) 100%);
   border: 1px solid var(--line);
   border-radius: 24px;
-  box-shadow: 0 18px 60px rgba(68, 44, 24, 0.08);
+  box-shadow:
+    0 20px 50px rgba(6, 3, 16, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .button-primary {
   min-height: 44px;
   border-radius: 18px;
-  background: var(--accent);
-  color: var(--accent-ink);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 3px solid var(--green-deep);
+  background: linear-gradient(180deg, var(--green) 0%, var(--green-deep) 100%);
+  color: var(--green-ink);
   padding: 0.85rem 1rem;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  box-shadow:
+    0 10px 26px var(--glow-green),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.08s ease;
+}
+
+.button-primary:active {
+  transform: translateY(2px);
+  border-bottom-width: 1px;
+  box-shadow:
+    0 4px 14px var(--glow-green),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .button-secondary {
   min-height: 44px;
   border-radius: 18px;
-  border: 1px solid var(--line);
-  background: white;
+  border: 1px solid var(--line-strong);
+  background: var(--card-3);
+  color: var(--foreground);
   padding: 0.85rem 1rem;
   font-weight: 600;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  transition:
+    transform 0.08s ease,
+    border-color 0.08s ease;
+}
+
+.button-secondary:active {
+  transform: translateY(2px);
+}
+
+.button-primary:disabled,
+.button-secondary:disabled {
+  opacity: 0.65;
+  pointer-events: none;
 }
 
 .field {
@@ -79,10 +192,143 @@ select {
   width: 100%;
   border-radius: 16px;
   border: 1px solid var(--line);
-  background: white;
+  background: var(--card-2);
+  color: var(--foreground);
   padding: 0.85rem 0.95rem;
+}
+
+.field:focus,
+.button-primary:focus-visible,
+.button-secondary:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 2px;
 }
 
 .muted {
   color: var(--muted);
+}
+
+/* small uppercase eyebrow / pixel-console labels */
+.pixel-label {
+  font-family: var(--font-pixel), var(--font-geist-sans), sans-serif;
+  font-size: 9px;
+  line-height: 1.6;
+  letter-spacing: 0.05em;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 9999px;
+  border: 1px solid var(--line-strong);
+  background: var(--card-3);
+  color: var(--muted);
+  padding: 0.3rem 0.7rem;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.glow-purple {
+  box-shadow:
+    0 0 0 1px rgba(166, 137, 255, 0.35),
+    0 10px 30px var(--glow-purple);
+}
+
+.glow-green {
+  box-shadow:
+    0 0 0 1px rgba(62, 232, 168, 0.35),
+    0 10px 30px var(--glow-green);
+}
+
+/* mission HUD progress pips (deterministic, no chance mechanics) */
+.mission-pips {
+  display: flex;
+  gap: 6px;
+}
+
+.mission-pip {
+  height: 8px;
+  flex: 1;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.14);
+  position: relative;
+  overflow: hidden;
+}
+
+.mission-pip[data-state="done"] {
+  background: linear-gradient(90deg, var(--green) 0%, var(--green-deep) 100%);
+  box-shadow: 0 0 10px var(--glow-green);
+}
+
+.mission-pip[data-state="active"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--purple) 0%, var(--purple-deep) 100%);
+  animation: mission-pip-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes mission-pip-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* satisfying tap feedback when an answer is chosen */
+@keyframes answer-pop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(0.94);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.answer-selected {
+  animation: answer-pop 0.28s ease;
+}
+
+/* whole-card exit when a question has been answered and the next one is loading */
+.card-leaving {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.99);
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button-primary,
+  .button-secondary,
+  .button-primary:active,
+  .button-secondary:active {
+    transition: none;
+    transform: none;
+  }
+
+  .mission-pip[data-state="active"]::after {
+    animation: none;
+    opacity: 0.85;
+  }
+
+  .answer-selected {
+    animation: none;
+  }
+
+  .card-leaving {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }

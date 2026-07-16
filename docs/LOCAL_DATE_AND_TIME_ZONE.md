@@ -22,3 +22,30 @@ with previous and next zone values.
 
 DST transitions change the derived local date boundary timing, but they do not
 change the rule that the budget is enforced per derived local calendar date.
+
+## Reminder scheduling
+
+- reminder scheduling also uses the stored client IANA time zone
+- nonexistent spring-forward local times resolve to the first valid instant
+  after the DST gap
+- ambiguous fall-back local times resolve to the earlier valid instant
+- reminder occurrence uniqueness is still keyed by the derived local calendar
+  date, not by UTC date
+
+## Worker database-time policy
+
+The notification worker currently follows the repository-wide timestamp
+convention rather than introducing a partial `timestamptz` migration:
+
+- worker instants are stored in `timestamp without time zone`
+- those values represent UTC instants by convention
+- claim eligibility, lease expiry, retry eligibility, and finalization compare
+  against `statement_timestamp() AT TIME ZONE 'UTC'`
+- worker code must never compare those UTC-naive columns against
+  session-local `CURRENT_TIMESTAMP`
+- retry delays may be computed in application code, but persisted `retryAt`
+  values are anchored from database time
+
+This policy is covered by integration tests that execute the same worker claim
+scenario after `SET TIME ZONE 'UTC'`, `SET TIME ZONE 'America/Los_Angeles'`,
+and `SET TIME ZONE 'Asia/Seoul'`.

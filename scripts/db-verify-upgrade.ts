@@ -104,6 +104,10 @@ VALUES
   ('slot_done_2', 'answer_done_2', '2026-07-09T10:10:00.000Z'),
   ('slot_done_3', 'answer_done_3', '2026-07-09T10:15:00.000Z');
 
+INSERT INTO "public"."ProgressEvent" ("id", "clientId", "eventType", "points", "sourceType", "sourceId", "idempotencyKey", "createdAt")
+VALUES
+  ('progress_upgrade_1', 'client_upgrade', 'MISSION_COMPLETED', 1, 'MISSION', 'mission_done_upgrade', 'mission_completed:mission_done_upgrade', '2026-07-09T11:00:00.000Z');
+
 INSERT INTO "public"."OutboxEvent" ("id", "organizationId", "eventType", "aggregateType", "aggregateId", "idempotencyKey", "payloadJson", "status", "availableAt", "processedAt", "attemptCount", "createdAt")
 VALUES
   ('outbox_upgrade_registration', 'org_upgrade', 'STAFF_IN_APP_NOTIFICATION', 'CLIENT', 'client_upgrade', 'registration:client_upgrade:staff_notify_upgrade', '{"recipientId":"staff_notify_upgrade","type":"CLIENT_REGISTERED"}', 'PENDING', '2026-07-10T09:10:00.000Z', NULL, 0, '2026-07-10T09:10:00.000Z'),
@@ -174,6 +178,10 @@ VALUES ('notif_upgrade_1', 'org_upgrade', 'staff_notify_upgrade', 'MISSION_COMPL
       activeAnswers,
       outboxCount,
       notificationCount,
+      participationCount,
+      honeyProfile,
+      intentCount,
+      deliveryAttemptCount,
       questionVersion,
       missionSlot,
       answerRevision,
@@ -190,6 +198,12 @@ VALUES ('notif_upgrade_1', 'org_upgrade', 'staff_notify_upgrade', 'MISSION_COMPL
       }),
       client.outboxEvent.count(),
       client.inAppNotification.count(),
+      client.participationEvent.count(),
+      client.honeyProfile.findUnique({
+        where: { clientId: "client_upgrade" },
+      }),
+      client.notificationIntent.count(),
+      client.notificationDeliveryAttempt.count(),
       client.questionVersion.findUnique({ where: { id: "qv_upgrade_1" } }),
       client.missionSlot.findUnique({ where: { id: "slot_active_1" } }),
       client.answerRevision.findUnique({ where: { id: "answer_active_1" } }),
@@ -222,6 +236,12 @@ VALUES ('notif_upgrade_1', 'org_upgrade', 'staff_notify_upgrade', 'MISSION_COMPL
     }
     if (outboxCount !== 2 || notificationCount !== 1) {
       throw new Error("VERIFY_UPGRADE_NOTIFICATION_ROWS_BROKEN");
+    }
+    if (participationCount !== 1 || honeyProfile?.totalPoints !== 1) {
+      throw new Error("VERIFY_UPGRADE_HONEY_BACKFILL_BROKEN");
+    }
+    if (intentCount !== 0 || deliveryAttemptCount !== 0) {
+      throw new Error("VERIFY_UPGRADE_WORKER_TABLES_EXPECTED_EMPTY");
     }
     if (
       !questionVersion ||

@@ -38,7 +38,7 @@ export default async function InvitationPage({
           </Link>
         </div>
         <div className="card overflow-hidden p-6">
-          <div className="rounded-[28px] bg-[#f2ddc7] p-4">
+          <div className="glow-purple rounded-[28px] bg-[#150f28] p-4">
             <Image
               src="/honey-source.png"
               alt="Honey, a friendly dog guide for the mission"

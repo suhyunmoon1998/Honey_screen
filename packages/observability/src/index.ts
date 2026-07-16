@@ -51,6 +51,181 @@ export type OperationalEvent =
       eventName: "mission_completed";
       result: "SUCCESS";
       reasonCode: "MISSION_COMPLETED";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "notification_claim_batch";
+      result: "SUCCESS";
+      reasonCode: "CLAIMED";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "notification_claim_empty";
+      result: "SUCCESS";
+      reasonCode: "NO_READY_INTENTS";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "notification_lease_recovered";
+      result: "SUCCESS";
+      reasonCode: "EXPIRED_LEASE_RECLAIMED";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "notification_lease_renewed";
+      result: "SUCCESS";
+      reasonCode: "LEASE_EXTENDED";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "notification_lease_lost";
+      result: "REJECTED";
+      reasonCode: "LEASE_LOST";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "notification_delivery_attempted";
+      result: "STARTED";
+      reasonCode: "DISPATCH_STARTED";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "notification_delivery_result";
+      result:
+        | "SUCCESS"
+        | "SIMULATED"
+        | "SUPPRESSED"
+        | "RETRYING"
+        | "FAILED"
+        | "AMBIGUOUS";
+      reasonCode:
+        | "DELIVERED"
+        | "SIMULATED"
+        | "SUPPRESSED"
+        | "RETRYABLE_FAILURE"
+        | "PERMANENT_FAILURE"
+        | "INVALID_SUBSCRIPTION"
+        | "AMBIGUOUS";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "notification_retry_scheduled";
+      result: "RETRYING";
+      reasonCode:
+        | "provider_timeout"
+        | "provider_rate_limited"
+        | "provider_unavailable";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "notification_attempts_exhausted";
+      result: "FAILED";
+      reasonCode: "attempts_exhausted";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "notification_ambiguous";
+      result: "AMBIGUOUS";
+      reasonCode: "ambiguous_provider_outcome";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "push_subscription_invalidated";
+      result: "SUCCESS";
+      reasonCode: "invalid_subscription";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "notification_preference_enabled";
+      result: "SUCCESS";
+      reasonCode: "PREFERENCE_ENABLED";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "notification_preference_disabled";
+      result: "SUCCESS";
+      reasonCode: "PREFERENCE_DISABLED";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "notification_permission_requested";
+      result: "STARTED";
+      reasonCode: "PERMISSION_REQUESTED";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "notification_permission_granted";
+      result: "SUCCESS";
+      reasonCode: "PERMISSION_GRANTED";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "notification_permission_denied";
+      result: "REJECTED";
+      reasonCode: "PERMISSION_DENIED";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "push_subscription_created";
+      result: "SUCCESS";
+      reasonCode: "SUBSCRIPTION_CREATED";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "push_subscription_reused";
+      result: "SUCCESS";
+      reasonCode: "SUBSCRIPTION_REUSED";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "reminder_scheduler_batch_started";
+      result: "STARTED";
+      reasonCode: "BATCH_STARTED";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "reminder_scheduler_batch_completed";
+      result: "SUCCESS";
+      reasonCode: "BATCH_COMPLETED";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "reminder_occurrence_created";
+      result: "SUCCESS";
+      reasonCode: "OCCURRENCE_CREATED";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "reminder_occurrence_conflict";
+      result: "SUCCESS";
+      reasonCode: "DUPLICATE_OCCURRENCE";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "reminder_occurrence_suppressed";
+      result: "SUPPRESSED";
+      reasonCode:
+        | "preference_disabled"
+        | "no_active_subscription"
+        | "mission_completed"
+        | "daily_cap_exhausted"
+        | "no_eligible_questions"
+        | "quiet_hours"
+        | "account_restricted"
+        | "occurrence_expired"
+        | "time_zone_changed"
+        | "duplicate_occurrence";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "reminder_occurrence_expired";
+      result: "EXPIRED";
+      reasonCode: "occurrence_expired";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "reminder_intent_created";
+      result: "SUCCESS";
+      reasonCode: "INTENT_CREATED";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "reminder_dispatch_suppressed";
+      result: "SUPPRESSED";
+      reasonCode:
+        | "preference_disabled"
+        | "no_active_subscription"
+        | "mission_completed"
+        | "daily_cap_exhausted"
+        | "no_eligible_questions"
+        | "quiet_hours"
+        | "account_restricted"
+        | "occurrence_expired"
+        | "time_zone_changed";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "worker_shutdown_started";
+      result: "STARTED";
+      reasonCode: "SHUTDOWN_SIGNAL";
+    })
+  | (BaseOperationalEvent & {
+      eventName: "worker_shutdown_completed";
+      result: "SUCCESS";
+      reasonCode: "SHUTDOWN_COMPLETE";
     });
 
 export type EmitOperationalEventInput = Omit<

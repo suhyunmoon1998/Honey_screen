@@ -3,6 +3,7 @@ import { prisma, type Prisma } from "@honey/db";
 import {
   answerValueSchema,
   deriveReviewFlags,
+  generateOtpCode,
   getParticipationPointsForEvent,
   getLocalDateInTimeZone,
   hashToken as hashDomainToken,
@@ -15,6 +16,7 @@ import {
   projectHoneyProfile,
   rewardDependsOnlyOnParticipation,
   selectMissionQuestions,
+  sendSms,
   verifyPassword,
   type MissionKind,
   type ParticipationEventType,
@@ -223,7 +225,8 @@ export async function requestOtp(input: {
     throw new Error("GENERIC_OTP_REQUEST");
   }
 
-  const code = env.DEV_OTP_CODE;
+  const useDevCode = env.NODE_ENV !== "production";
+  const code = useDevCode ? env.DEV_OTP_CODE : generateOtpCode();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
   const resendAvailableAt = new Date(Date.now() + 60 * 1000);
 
@@ -239,6 +242,29 @@ export async function requestOtp(input: {
     },
   });
 
+  if (!useDevCode) {
+    if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN || !env.TWILIO_FROM_NUMBER) {
+      throw new Error("SMS_PROVIDER_NOT_CONFIGURED");
+    }
+
+    const body =
+      input.locale === "es"
+        ? `Tu codigo de Honey es ${code}. Vence en 10 minutos.`
+        : `Your Honey code is ${code}. It expires in 10 minutes.`;
+
+    const result = await sendSms({
+      accountSid: env.TWILIO_ACCOUNT_SID,
+      authToken: env.TWILIO_AUTH_TOKEN,
+      fromNumber: env.TWILIO_FROM_NUMBER,
+      toE164: phoneE164,
+      body,
+    });
+
+    if (!result.ok) {
+      throw new Error("OTP_SEND_FAILED");
+    }
+  }
+
   return {
     phoneE164,
     devCode:
@@ -246,81 +272,50 @@ export async function requestOtp(input: {
   };
 }
 
-export async function verifyOtpAndRegister(input: {
-  token: string;
-  rawPhone: string;
-  code: string;
+type InvitationRecord = NonNullable<
+  Awaited<ReturnType<typeof getInvitationPreview>>
+>;
+
+async function finalizeClientRegistration(input: {
+  invitation: InvitationRecord;
+  phoneE164: string;
   locale: Locale;
+  consumeChallengeId?: string;
 }) {
-  const invitation = await getInvitationPreview(input.token);
-
-  if (!invitation) {
-    throw new Error("INVITATION_INVALID");
-  }
-
-  const phoneE164 = normalizePhoneToE164(input.rawPhone);
-  const challenge = await prisma.verificationChallenge.findFirst({
-    where: {
-      phoneE164,
-      purpose: "CLIENT_SIGN_IN",
-      consumedAt: null,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-
-  if (!challenge || isOtpExpired(challenge.expiresAt)) {
-    throw new Error("OTP_INVALID");
-  }
-
-  if (challenge.attemptCount >= challenge.maxAttempts) {
-    throw new Error("OTP_LOCKED");
-  }
-
-  if (challenge.codeHash !== hashOtp(input.code)) {
-    await prisma.verificationChallenge.update({
-      where: { id: challenge.id },
-      data: {
-        attemptCount: {
-          increment: 1,
-        },
-      },
-    });
-    throw new Error("OTP_INVALID");
-  }
-
   const env = getEnv();
+  const { invitation, phoneE164, locale, consumeChallengeId } = input;
 
   const sessionInput = {
     actorType: "CLIENT" as const,
     organizationId: invitation.organizationId,
     role: "CLIENT" as const,
-    locale: input.locale,
+    locale,
   };
 
   const result = await prisma.$transaction(async (tx) => {
     const upsertedClient = await tx.client.upsert({
       where: { phoneE164 },
       update: {
-        locale: input.locale,
+        locale,
         timeZone: invitation.timeZone,
       },
       create: {
         organizationId: invitation.organizationId,
         phoneE164,
-        locale: input.locale,
+        locale,
         timeZone: invitation.timeZone,
         eligibleForDeletionAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
       },
     });
 
-    await tx.verificationChallenge.update({
-      where: { id: challenge.id },
-      data: {
-        consumedAt: new Date(),
-      },
-    });
+    if (consumeChallengeId) {
+      await tx.verificationChallenge.update({
+        where: { id: consumeChallengeId },
+        data: {
+          consumedAt: new Date(),
+        },
+      });
+    }
 
     await tx.invitation.update({
       where: { id: invitation.id },
@@ -349,7 +344,7 @@ export async function verifyOtpAndRegister(input: {
           consentType: "PRIVACY_NOTICE",
           granted: true,
           policyVersion: env.PRIVACY_POLICY_VERSION,
-          locale: input.locale,
+          locale,
         },
       });
     }
@@ -361,7 +356,7 @@ export async function verifyOtpAndRegister(input: {
           consentType: "TRANSACTIONAL_MESSAGES",
           granted: true,
           policyVersion: env.PRIVACY_POLICY_VERSION,
-          locale: input.locale,
+          locale,
         },
       });
     }
@@ -414,6 +409,91 @@ export async function verifyOtpAndRegister(input: {
   });
 
   return result;
+}
+
+export async function verifyOtpAndRegister(input: {
+  token: string;
+  rawPhone: string;
+  code: string;
+  locale: Locale;
+}) {
+  const invitation = await getInvitationPreview(input.token);
+
+  if (!invitation) {
+    throw new Error("INVITATION_INVALID");
+  }
+
+  const phoneE164 = normalizePhoneToE164(input.rawPhone);
+  const challenge = await prisma.verificationChallenge.findFirst({
+    where: {
+      phoneE164,
+      purpose: "CLIENT_SIGN_IN",
+      consumedAt: null,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  if (!challenge || isOtpExpired(challenge.expiresAt)) {
+    throw new Error("OTP_INVALID");
+  }
+
+  if (challenge.attemptCount >= challenge.maxAttempts) {
+    throw new Error("OTP_LOCKED");
+  }
+
+  if (challenge.codeHash !== hashOtp(input.code)) {
+    await prisma.verificationChallenge.update({
+      where: { id: challenge.id },
+      data: {
+        attemptCount: {
+          increment: 1,
+        },
+      },
+    });
+    throw new Error("OTP_INVALID");
+  }
+
+  return finalizeClientRegistration({
+    invitation,
+    phoneE164,
+    locale: input.locale,
+    consumeChallengeId: challenge.id,
+  });
+}
+
+/**
+ * Registers a client directly from the invitation form without a phone OTP
+ * challenge. Gated behind OTP_VERIFICATION_ENABLED=false. Privacy and
+ * transactional-message consent are still required and recorded; only the
+ * phone-possession check is skipped. Intended as a temporary launch mode
+ * until a real SMS OTP provider is wired in.
+ */
+export async function registerClientForInvitation(input: {
+  token: string;
+  rawPhone: string;
+  locale: Locale;
+  acceptedPrivacy: boolean;
+  acceptedMessages: boolean;
+}) {
+  const invitation = await getInvitationPreview(input.token);
+
+  if (!invitation || !input.acceptedPrivacy || !input.acceptedMessages) {
+    throw new Error("INVITATION_INVALID");
+  }
+
+  const phoneE164 = normalizePhoneToE164(input.rawPhone);
+
+  if (phoneE164 !== invitation.phoneE164) {
+    throw new Error("GENERIC_OTP_REQUEST");
+  }
+
+  return finalizeClientRegistration({
+    invitation,
+    phoneE164,
+    locale: input.locale,
+  });
 }
 
 export async function completeOnboarding(input: {

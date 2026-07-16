@@ -7,13 +7,27 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "A respectful Honey investigation companion.",
     start_url: "/",
     display: "standalone",
-    background_color: "#f7efe7",
-    theme_color: "#c66a2b",
+    background_color: "#120c22",
+    theme_color: "#1d1733",
+    orientation: "portrait",
     icons: [
       {
-        src: "/honey-source.png",
+        src: "/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-512.png",
         sizes: "512x512",
         type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-maskable-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
       },
     ],
   };

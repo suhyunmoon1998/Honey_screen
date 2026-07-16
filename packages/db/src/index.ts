@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
@@ -15,4 +15,5 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export { seedDatabase } from "../prisma/seed";
-export type { Prisma } from "@prisma/client";
+export { PrismaClient };
+export { Prisma };

@@ -13,6 +13,8 @@ Task 01 implements a production-shaped vertical slice for Honey Case Adventure:
 - transactional outbox plus staff in-app notifications
 - development-only staff login with role enforcement
 - Task 02 question engine, daily-cap enforcement, and content versioning closeout
+- Task 03 notification worker hardening and Task 03C reminder preferences,
+  consent, and time-zone-aware scheduling
 
 ## Local setup
 
@@ -108,6 +110,67 @@ pnpm test
 pnpm build
 pnpm test:e2e
 ```
+
+## Worker commands
+
+The notification worker is part of the default local stack:
+
+```bash
+pnpm --filter worker dev
+pnpm --filter worker build
+```
+
+Key worker environment variables:
+
+- `WORKER_POLL_MS`
+- `WORKER_CLAIM_BATCH_SIZE`
+- `WORKER_DELIVERY_CONCURRENCY`
+- `WORKER_LEASE_MS`
+- `WORKER_PROVIDER_TIMEOUT_MS`
+- `WORKER_SHUTDOWN_GRACE_MS`
+- `WORKER_RETRY_BASE_MS`
+- `WORKER_RETRY_MAX_MS`
+- `WORKER_NOTIFICATION_MAX_ATTEMPTS`
+- `SCHEDULER_ENABLED`
+- `SCHEDULER_POLL_MS`
+- `SCHEDULER_BATCH_SIZE`
+- `SCHEDULER_LOOKAHEAD_MINUTES`
+- `SCHEDULER_CATCH_UP_MINUTES`
+- `DEFAULT_QUIET_HOURS_START`
+- `DEFAULT_QUIET_HOURS_END`
+- `ALLOWED_REMINDER_TIME_CHOICES`
+- `NOTIFICATION_CONSENT_VERSION`
+- `REMINDER_TEMPLATE_VERSION`
+
+Current worker safety defaults:
+
+- database time policy: `statement_timestamp() AT TIME ZONE 'UTC'`
+- provider timeout default: `10000`
+- lease default: `30000`
+- acknowledgement safety margin: at least `1000` ms
+- claim batch size default: `10`
+- delivery concurrency default: `4`
+- poll interval minimum: `100` ms
+- reminder catch-up max: `180` minutes
+- SMS reminders stay disabled by config guard
+
+See [docs/runbooks/worker-notifications.md](/Users/davidmun/Downloads/honey-codex-senior-engineering-pack/docs/runbooks/worker-notifications.md) for operational guidance and safe diagnostic SQL.
+
+## Reminder preferences
+
+Authenticated clients can manage mission reminders at:
+
+- `/settings/notifications`
+
+Current reminder behavior:
+
+- notification consent is separate from registration/privacy consent
+- reminders are web-push only in this checkpoint
+- generic lock-screen-safe copy is used for all reminder notifications
+- scheduling uses the stored client IANA time zone, not browser-local dates
+- dispatch is revalidated at send time, so disabled preferences, quiet hours,
+  expired windows, completed missions, exhausted daily caps, or missing active
+  subscriptions suppress delivery instead of sending stale reminders
 
 ## Upgrade verification
 

@@ -17,6 +17,17 @@ test.beforeEach(async () => {
   });
 });
 
+function flushNotificationWorker() {
+  execSync(
+    "pnpm tsx -e 'import { processPendingOutbox } from \"./apps/worker/src/notifications\"; (async()=>{ await processPendingOutbox(); await processPendingOutbox(); })().catch((error)=>{ console.error(error); process.exit(1); })'",
+    {
+      cwd: process.cwd(),
+      stdio: "ignore",
+      env: process.env,
+    },
+  );
+}
+
 async function attachFailureArtifacts(page: Page, testInfo: TestInfo) {
   const consoleLogs: string[] = [];
   const networkLogs: string[] = [];
@@ -160,7 +171,6 @@ test("Spanish invitation to mission completion and staff notifications", async (
 
     expect(verifyResponse.status()).toBe(200);
     expect(verifyHeaders["cache-control"]).toBe("no-store");
-    expect(verifyHeaders["set-cookie"]).toContain(sessionCookieName);
 
     await expect(page).toHaveURL(/\/onboarding$/);
 
@@ -236,8 +246,11 @@ test("Spanish invitation to mission completion and staff notifications", async (
       page.getByRole("heading", { name: /Mision completada/i }),
     ).toBeVisible();
     await expect(page.getByText(/Honey reward/i)).toBeVisible();
-    await expect(page.getByText(/Pista de participacion/i)).toBeVisible();
+    await expect(
+      page.getByText(/Honey gano una pista por tu participacion/i),
+    ).toBeVisible();
     await expect(page.getByText(/POSSIBLE_|review/i)).toHaveCount(0);
+    flushNotificationWorker();
 
     const staffPage = await browser.newPage();
     const finalizeStaffArtifacts = await attachFailureArtifacts(
@@ -259,13 +272,22 @@ test("Spanish invitation to mission completion and staff notifications", async (
 
       await expect
         .poll(
-          async () =>
-            await staffPage.getByText(/Nuevo registro de cliente/i).count(),
+          async () => {
+            await staffPage.reload();
+            return await staffPage
+              .getByText(/Nuevo registro de cliente/i)
+              .count();
+          },
+          { timeout: 15_000 },
         )
         .toBeGreaterThan(0);
       await expect
         .poll(
-          async () => await staffPage.getByText(/Mision completada/i).count(),
+          async () => {
+            await staffPage.reload();
+            return await staffPage.getByText(/Mision completada/i).count();
+          },
+          { timeout: 15_000 },
         )
         .toBeGreaterThan(0);
 

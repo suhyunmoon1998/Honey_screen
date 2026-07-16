@@ -71,6 +71,69 @@ enum PushSubscriptionStatus {
   INVALID
 }
 
+enum NotificationChannel {
+  IN_APP
+  WEB_PUSH
+  EMAIL
+  SMS
+}
+
+enum NotificationPurpose {
+  MISSION_REMINDER
+}
+
+enum ReminderOccurrenceStatus {
+  PLANNED
+  INTENT_CREATED
+  SUPPRESSED
+  EXPIRED
+  CANCELLED
+}
+
+enum ReminderSuppressionReason {
+  preference_disabled
+  no_active_subscription
+  mission_completed
+  daily_cap_exhausted
+  no_eligible_questions
+  quiet_hours
+  account_restricted
+  occurrence_expired
+  time_zone_changed
+  duplicate_occurrence
+}
+
+enum NotificationIntentStatus {
+  QUEUED
+  PROCESSING
+  DELIVERED
+  SIMULATED
+  SUPPRESSED
+  FAILED_RETRYABLE
+  FAILED_PERMANENT
+  INVALID_SUBSCRIPTION
+  AMBIGUOUS
+}
+
+enum NotificationAttemptStatus {
+  CLAIMED
+  DISPATCH_STARTED
+  PROVIDER_CALL_STARTED
+  DELIVERED
+  SIMULATED
+  SUPPRESSED
+  RETRYABLE_FAILURE
+  PERMANENT_FAILURE
+  INVALID_SUBSCRIPTION
+  AMBIGUOUS
+}
+
+enum ProviderIdempotencyMode {
+  GUARANTEED
+  BEST_EFFORT
+  NONE
+}
+
 model Organization {
   id                   String               @id @default(cuid())
   name                 String
@@ -89,6 +152,9 @@ model Organization {
   honeyProfiles        HoneyProfile[]
   deviceInstallations  DeviceInstallation[]
   pushSubscriptions    PushSubscription[]
+  notificationIntents  NotificationIntent[]
+  notificationPreferences NotificationPreference[]
+  reminderOccurrences  ReminderOccurrence[]
 }
 
 model StaffUser {
@@ -105,6 +171,7 @@ model StaffUser {
   approvedQuestionVersions QuestionVersion[] @relation("QuestionVersionApprovedBy")
   clarifications   ClarificationRequest[]
   notifications    InAppNotification[]
+  notificationIntents NotificationIntent[]
 }
 
 model Client {
@@ -137,6 +204,9 @@ model Client {
   honeyProfile          HoneyProfile?
   deviceInstallations   DeviceInstallation[]
   pushSubscriptions     PushSubscription[]
+  notificationPreferences NotificationPreference[]
+  reminderOccurrences   ReminderOccurrence[]
+  notificationIntents   NotificationIntent[]
 }
 
 model Invitation {
@@ -189,9 +259,15 @@ model ConsentRecord {
   id            String   @id @default(cuid())
   clientId      String
   consentType   String
+  purpose       NotificationPurpose?
+  channel       NotificationChannel?
   granted       Boolean
   policyVersion String
   locale        String
+  actorType     ActorType?
+  actorId       String?
+  timeZone      String?
+  installationId String?
   createdAt     DateTime @default(now())
   client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
@@ -442,6 +518,8 @@ model PushSubscription {
   organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   client                Client                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
   deviceInstallation    DeviceInstallation     @relation(fields: [deviceInstallationId], references: [id], onDelete: Cascade)
+  notificationIntents   NotificationIntent[]
+  notificationPreferences NotificationPreference[]
 
   @@index([organizationId, clientId, status])
 }
@@ -529,7 +607,9 @@ model OutboxEvent {
   processedAt    DateTime?
   attemptCount   Int          @default(0)
   createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  notificationIntent NotificationIntent?
 }
 
 model InAppNotification {
@@ -544,6 +624,125 @@ model InAppNotification {
   createdAt      DateTime    @default(now())
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   recipient      StaffUser   @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+}
+
+model NotificationIntent {
+  id                  String                   @id @default(cuid())
+  organizationId      String
+  outboxEventId       String                   @unique
+  recipientId         String?
+  clientId            String?
+  pushSubscriptionId  String?
+  channel             NotificationChannel
+  provider            String
+  status              NotificationIntentStatus @default(QUEUED)
+  deliveryKey         String                   @unique
+  notificationType    String
+  title               String
+  body                String
+  availableAt         DateTime                 @default(now())
+  retryAt             DateTime?
+  attemptCount        Int                      @default(0)
+  maxAttempts         Int                      @default(5)
+  leaseOwner          String?
+  leaseToken          String?
+  leaseExpiresAt      DateTime?
+  lastSafeErrorCode   String?
+  completedAt         DateTime?
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  organization        Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  outboxEvent         OutboxEvent              @relation(fields: [outboxEventId], references: [id], onDelete: Cascade)
+  recipient           StaffUser?               @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  client              Client?                  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  pushSubscription    PushSubscription?        @relation(fields: [pushSubscriptionId], references: [id], onDelete: SetNull)
+  attempts            NotificationDeliveryAttempt[]
+  reminderOccurrence  ReminderOccurrence?
+
+  @@index([status, retryAt, availableAt, leaseExpiresAt, createdAt])
+  @@index([organizationId, recipientId, createdAt])
+  @@index([organizationId, clientId, createdAt])
+}
+
+model NotificationDeliveryAttempt {
+  id                        String                  @id @default(cuid())
+  notificationIntentId      String
+  attemptNumber             Int
+  leaseToken                String
+  provider                  String
+  providerIdempotencyMode   ProviderIdempotencyMode
+  status                    NotificationAttemptStatus
+  startedAt                 DateTime
+  dispatchStartedAt         DateTime?
+  completedAt               DateTime?
+  safeResultCode            String?
+  retryAt                   DateTime?
+  createdAt                 DateTime                @default(now())
+  notificationIntent        NotificationIntent      @relation(fields: [notificationIntentId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationIntentId, attemptNumber])
+  @@index([notificationIntentId, createdAt])
+}
+
+model NotificationProviderReceipt {
+  id                    String                  @id @default(cuid())
+  deliveryKey           String                  @unique
+  provider              String
+  providerIdempotencyMode ProviderIdempotencyMode
+  status                NotificationAttemptStatus
+  safeResultCode        String
+  providerReference     String?
+  createdAt             DateTime                @default(now())
+}
+
+model NotificationPreference {
+  id                       String              @id @default(cuid())
+  organizationId           String
+  clientId                 String
+  pushSubscriptionId       String?
+  purpose                  NotificationPurpose
+  channel                  NotificationChannel
+  enabled                  Boolean             @default(false)
+  preferredLocalTime       String
+  quietHoursStart          String
+  quietHoursEnd            String
+  consentVersion           String?
+  enabledAt                DateTime?
+  disabledAt               DateTime?
+  timeZoneAtPreferenceChange String
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+  organization             Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client                   Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  pushSubscription         PushSubscription?   @relation(fields: [pushSubscriptionId], references: [id], onDelete: SetNull)
+
+  @@unique([clientId, purpose, channel])
+  @@index([organizationId, clientId, enabled])
+}
+
+model ReminderOccurrence {
+  id                  String                    @id @default(cuid())
+  organizationId      String
+  clientId            String
+  purpose             NotificationPurpose
+  localDate           String
+  timeZone            String
+  preferredLocalTime  String
+  scheduledFor        DateTime
+  expiresAt           DateTime
+  channel             NotificationChannel
+  status              ReminderOccurrenceStatus @default(PLANNED)
+  suppressionReason   ReminderSuppressionReason?
+  notificationIntentId String?                 @unique
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  organization        Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client              Client                   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  notificationIntent  NotificationIntent?      @relation(fields: [notificationIntentId], references: [id], onDelete: SetNull)
+
+  @@unique([clientId, purpose, localDate])
+  @@index([organizationId, clientId, scheduledFor])
+  @@index([status, scheduledFor, expiresAt, createdAt])
 }
 
 model AuditEvent {

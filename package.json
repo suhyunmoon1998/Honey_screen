@@ -3,7 +3,10 @@
   "private": true,
   "packageManager": "pnpm@9.15.0",
   "scripts": {
+    "postinstall": "pnpm --filter @honey/db prisma generate",
+    "vercel-build": "pnpm --filter @honey/db prisma migrate deploy && pnpm --filter web build",
     "dev": "concurrently \"pnpm --filter web dev\" \"pnpm --filter worker dev\"",
+    "dev:e2e": "concurrently --kill-others-on-fail \"pnpm --filter web dev\" \"pnpm --filter worker start\"",
     "build": "pnpm --filter web build && pnpm --filter worker build",
     "lint": "pnpm --filter web lint && eslint apps/worker/src packages --ext .ts,.tsx",
     "format": "prettier --write .",
@@ -25,10 +28,11 @@
     "db:verify-upgrade": "tsx scripts/db-verify-upgrade.ts"
   },
   "devDependencies": {
-    "@playwright/test": "1.55.1",
+    "@playwright/test": "1.61.1",
     "@types/node": "20.19.43",
     "concurrently": "9.2.1",
     "eslint": "9.39.1",
+    "next": "16.2.10",
     "prettier": "3.6.2",
     "tsx": "4.20.6",
     "typescript": "5.9.3",

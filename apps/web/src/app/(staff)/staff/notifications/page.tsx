@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@honey/db";
 import { requireStaffSession } from "@/lib/authz";
 
@@ -21,19 +22,29 @@ export default async function StaffNotificationsPage() {
             </button>
           </form>
         </div>
+        <nav className="mt-4 flex flex-wrap gap-2 text-sm">
+          <Link className="button-secondary px-3 py-1.5" href="/staff/clients">
+            Clientes
+          </Link>
+          <Link className="button-secondary px-3 py-1.5" href="/staff/content">
+            Contenido
+          </Link>
+        </nav>
         <div className="mt-6 space-y-3">
           {notifications.map((notification) => (
             <article
-              className="rounded-3xl border border-line bg-white p-4"
+              className="rounded-3xl border border-line bg-white p-4 text-[#1c1433]"
               key={notification.id}
             >
-              <p className="text-sm uppercase tracking-[0.2em] muted">
+              <p className="text-sm uppercase tracking-[0.2em] text-[#6b6382]">
                 {notification.type}
               </p>
               <h2 className="mt-2 text-lg font-semibold">
                 {notification.title}
               </h2>
-              <p className="mt-2 leading-7 muted">{notification.body}</p>
+              <p className="mt-2 leading-7 text-[#6b6382]">
+                {notification.body}
+              </p>
             </article>
           ))}
           {notifications.length === 0 ? (

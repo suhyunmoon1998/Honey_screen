@@ -26,7 +26,7 @@ export default function StaffLoginPage() {
             <span className="mb-2 block text-sm font-medium">Contrasena</span>
             <input
               className="field"
-              defaultValue="FictionalPass123!"
+              defaultValue="jacklaw123"
               name="password"
               type="password"
             />

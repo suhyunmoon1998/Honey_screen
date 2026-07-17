@@ -5,7 +5,7 @@ import { getMissionForClient, saveMissionAnswer } from "@/lib/services";
 
 const schema = z.object({
   missionSlotId: z.string().min(1),
-  value: z.boolean(),
+  value: z.union([z.boolean(), z.string().trim().min(1).max(500)]),
 });
 
 export async function POST(

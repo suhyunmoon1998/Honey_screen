@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { getMessages } from "@honey/i18n";
 import { prisma } from "@honey/db";
-import { LocaleSwitch } from "@/components/locale-switch";
 import { SignOutForm } from "@/components/signout-form";
 import { requireClientSession } from "@/lib/authz";
 
@@ -54,25 +53,28 @@ export default async function DashboardPage({
         <div className="card overflow-hidden p-0">
           <div className="relative rounded-[24px] bg-[linear-gradient(145deg,#1c1433_0%,#3a2a66_48%,#1c9d74_100%)] p-5 text-[#ece7fb]">
             <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(166,137,255,0.32),transparent_70%)]" />
-            <div className="relative flex items-center justify-between gap-3 rounded-[20px] border border-white/15 bg-black/25 px-4 py-3 backdrop-blur-sm">
-              <div>
-                <p className="pixel-label text-white/70">
-                  {messages.dashboardHubLabel}
-                </p>
-                <h1 className="mt-2 text-2xl font-semibold">
-                  {messages.dashboardTitle}
-                </h1>
-              </div>
-              <LocaleSwitch
-                currentLocale={locale}
-                redirectTo="/dashboard"
-                label={locale === "en" ? "EN" : "ES"}
-                className="shrink-0 rounded-full border border-[#3ee8a8]/50 bg-[#3ee8a8]/12 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#a9f5d6]"
-              />
+            <div className="relative rounded-[20px] border border-white/15 bg-black/25 px-4 py-3 backdrop-blur-sm">
+              <p className="pixel-label text-white/70">
+                {messages.dashboardHubLabel}
+              </p>
+              <h1 className="mt-2 text-2xl font-semibold">
+                {messages.dashboardTitle}
+              </h1>
             </div>
 
-            <div className="relative mt-4 grid grid-cols-[1.15fr_0.85fr] gap-3">
-              <div className="rounded-[24px] border border-white/12 bg-white/8 p-4 backdrop-blur-sm">
+            <div className="relative mt-4 flex items-start gap-3">
+              <div className="glow-purple h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-white/25 bg-[#150f28]">
+                <Image
+                  src="/honey-avatar.png"
+                  alt="Honey"
+                  width={128}
+                  height={128}
+                  className="h-full w-full object-cover"
+                  priority
+                />
+              </div>
+
+              <div className="speech-bubble relative flex-1 rounded-[24px] border border-white/12 bg-white/8 p-4 backdrop-blur-sm">
                 <p className="pixel-label text-[#c9b8ff]">
                   {messages.dashboardBriefLabel}
                 </p>
@@ -86,19 +88,6 @@ export default async function DashboardPage({
                   <div className="rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-white/75">
                     {messages.dashboardSafePace}
                   </div>
-                </div>
-              </div>
-
-              <div className="rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.03))] p-3">
-                <div className="rounded-[20px] bg-[#150f28] p-3 shadow-[inset_0_1px_0_rgba(166,137,255,0.25)]">
-                  <Image
-                    src="/honey-source.png"
-                    alt="Honey on the client dashboard"
-                    width={800}
-                    height={800}
-                    className="mx-auto h-auto w-full rounded-[16px] object-cover"
-                    priority
-                  />
                 </div>
               </div>
             </div>

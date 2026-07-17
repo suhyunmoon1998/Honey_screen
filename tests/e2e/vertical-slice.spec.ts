@@ -263,7 +263,7 @@ test("Spanish invitation to mission completion and staff notifications", async (
       await staffPage
         .getByLabel(/Correo/i)
         .fill("staff.fictional@jacklaw.example");
-      await staffPage.getByLabel(/Contrasena/i).fill("FictionalPass123!");
+      await staffPage.getByLabel(/Contrasena/i).fill("jacklaw123");
       await staffPage.getByRole("button", { name: /Entrar/i }).click();
 
       await expect(
@@ -520,7 +520,7 @@ test("staff can view content and admin can compare, draft, and approve versions"
     await staffPage
       .getByLabel(/Correo/i)
       .fill("staff.fictional@jacklaw.example");
-    await staffPage.getByLabel(/Contrasena/i).fill("FictionalPass123!");
+    await staffPage.getByLabel(/Contrasena/i).fill("jacklaw123");
     await staffPage.getByRole("button", { name: /Entrar/i }).click();
 
     await staffPage.goto("/staff/content");
@@ -538,7 +538,7 @@ test("staff can view content and admin can compare, draft, and approve versions"
     await adminPage
       .getByLabel(/Correo/i)
       .fill("admin.fictional@jacklaw.example");
-    await adminPage.getByLabel(/Contrasena/i).fill("FictionalPass123!");
+    await adminPage.getByLabel(/Contrasena/i).fill("jacklaw123");
     await adminPage.getByRole("button", { name: /Entrar/i }).click();
 
     await adminPage.goto("/staff/admin");

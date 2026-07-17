@@ -83,12 +83,12 @@ pnpm dev
 Staff:
 
 - `staff.fictional@jacklaw.example`
-- `FictionalPass123!`
+- `jacklaw123`
 
 Admin:
 
 - `admin.fictional@jacklaw.example`
-- `FictionalPass123!`
+- `jacklaw123`
 
 Client invitation:
 

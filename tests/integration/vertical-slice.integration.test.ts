@@ -335,7 +335,7 @@ describe("vertical slice services", () => {
   it("lets staff sign in but not gain admin permissions", async () => {
     const staff = await signInStaff({
       email: "staff.fictional@jacklaw.example",
-      password: "FictionalPass123!",
+      password: "jacklaw123",
     });
 
     expect(staff.role).toBe("STAFF");

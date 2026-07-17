@@ -44,24 +44,28 @@ export default async function StaffContentPage() {
             <div className="mt-4 space-y-3">
               {definition.versions.map((version) => (
                 <div
-                  className="rounded-2xl border border-line bg-white p-4"
+                  className="rounded-2xl border border-line bg-white p-4 text-[#1c1433]"
                   key={version.id}
                 >
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="text-sm font-semibold">
                       Version {version.versionNumber}
                     </span>
-                    <span className="rounded-full bg-[#f3ebe2] px-3 py-1 text-xs">
+                    <span className="rounded-full bg-[#f3ebe2] px-3 py-1 text-xs text-[#6b6382]">
                       {version.legalReviewStatus}
                     </span>
-                    <span className="text-xs muted">
+                    <span className="text-xs text-[#6b6382]">
                       Usada en {version.missionSlots.length} snapshots
                     </span>
                   </div>
                   <p className="mt-3 text-sm font-medium">ES</p>
-                  <p className="mt-1 text-sm muted">{version.promptEs}</p>
+                  <p className="mt-1 text-sm text-[#6b6382]">
+                    {version.promptEs}
+                  </p>
                   <p className="mt-3 text-sm font-medium">EN</p>
-                  <p className="mt-1 text-sm muted">{version.promptEn}</p>
+                  <p className="mt-1 text-sm text-[#6b6382]">
+                    {version.promptEn}
+                  </p>
                 </div>
               ))}
             </div>

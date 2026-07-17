@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { prisma } from "@honey/db";
 import { getMessages } from "@honey/i18n";
 import { LocaleSwitch } from "@/components/locale-switch";
@@ -25,6 +26,25 @@ export default async function RewardPage() {
             label={messages.switchLanguage}
           />
         </div>
+        <div className="card overflow-hidden p-0 mb-4">
+          <div className="relative rounded-[24px] bg-[linear-gradient(145deg,#1c1433_0%,#3a2a66_48%,#1c9d74_100%)] p-6 text-center text-[#ece7fb]">
+            <p className="pixel-label text-white/70">
+              {messages.dashboardConsoleLabel}
+            </p>
+            <div className="relative mx-auto mt-4 h-36 w-36">
+              <Image
+                src="/boss-goblin.png"
+                alt=""
+                fill
+                className="victory-boss-defeat object-contain"
+              />
+            </div>
+            <p className="victory-text mt-2 text-2xl font-black uppercase tracking-wide">
+              {messages.missionVictoryTitle}
+            </p>
+          </div>
+        </div>
+
         <div className="card p-6">
           <h1 className="text-3xl font-semibold">
             {messages.completeMission}

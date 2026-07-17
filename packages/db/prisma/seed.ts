@@ -993,11 +993,146 @@ const questionSeeds: SeedQuestion[] = [
   },
 ];
 
+// Real (non-fictional) California labor law screening questions. Seeded
+// unconditionally, independent of ALLOW_DEMO_CONTENT, so they exist in every
+// environment including production. selectMissionQuestions sorts candidates
+// within a category by priority first, then displayOrder — priority: 1 (the
+// fictional/demo pool's lowest is 5) keeps these ahead if both happen to
+// coexist locally.
+const realQuestionSeeds: SeedQuestion[] = [
+  {
+    stableKey: "employment.six_months_california",
+    category: "eligibility",
+    promptEs:
+      "¿Ha trabajado al menos seis meses en California en algún momento de los últimos tres años?",
+    promptEn:
+      "Have you worked at least six months in California at any time in the last three years?",
+    answerType: "BOOLEAN",
+    priority: 1,
+    displayOrder: -12,
+  },
+  {
+    stableKey: "employment.employer_name",
+    category: "employment_basics",
+    promptEs: "¿Para quién trabajaba?",
+    promptEn: "Who did you work for?",
+    answerType: "TEXT",
+    priority: 1,
+    displayOrder: -11,
+  },
+  {
+    stableKey: "employment.job_duties",
+    category: "employment_basics",
+    promptEs: "¿Qué hacía en su trabajo?",
+    promptEn: "What did you do at your job?",
+    answerType: "TEXT",
+    priority: 1,
+    displayOrder: -10,
+  },
+  {
+    stableKey: "employment.current_status_and_severance",
+    category: "employment_basics",
+    promptEs:
+      "¿Todavía trabaja ahí? Si no, ¿le ofrecieron dinero extra para firmar algún papel?",
+    promptEn:
+      "Are you still working there? If no, did they offer you extra money to sign any papers?",
+    answerType: "TEXT",
+    priority: 1,
+    emotionalWeight: 3,
+    displayOrder: -9,
+  },
+  {
+    stableKey: "timekeeping.method",
+    category: "timekeeping",
+    promptEs:
+      "¿Cómo registraba su tiempo (como marcar su hora de entrada y salida)?",
+    promptEn: "How did you track your time (like clocking in and out)?",
+    answerType: "TEXT",
+    priority: 1,
+    displayOrder: -8,
+  },
+  {
+    stableKey: "timekeeping.off_the_clock_work",
+    category: "wage_and_hour",
+    promptEs:
+      "¿Alguna vez tuvo que trabajar antes de marcar su entrada o quedarse tarde después de marcar su salida?",
+    promptEn:
+      "Did you ever have to work before you clocked in or stay late after you clocked out?",
+    answerType: "BOOLEAN",
+    priority: 1,
+    displayOrder: -7,
+  },
+  {
+    stableKey: "meal_break.shift_length",
+    category: "meal_and_rest_breaks",
+    promptEs: "¿Normalmente trabajaba turnos de más de seis horas?",
+    promptEn: "Did you usually work shifts that were longer than six hours?",
+    answerType: "BOOLEAN",
+    priority: 1,
+    displayOrder: -6,
+  },
+  {
+    stableKey: "overtime.daily_hours",
+    category: "overtime",
+    promptEs:
+      "¿Alguna vez trabajó más de 8 horas o más de 12 horas en un solo día?",
+    promptEn:
+      "Did you ever work more than 8 hours or more than 12 hours in one day?",
+    answerType: "BOOLEAN",
+    priority: 1,
+    displayOrder: -5,
+  },
+  {
+    stableKey: "overtime.weekly_hours",
+    category: "overtime",
+    promptEs:
+      "¿Alguna vez trabajó más de 40 horas en una semana o 7 días seguidos?",
+    promptEn:
+      "Did you ever work more than 40 hours in a week or 7 days in a row?",
+    answerType: "BOOLEAN",
+    priority: 1,
+    displayOrder: -4,
+  },
+  {
+    stableKey: "meal_break.timing",
+    category: "meal_and_rest_breaks",
+    promptEs:
+      "¿A qué hora empezaba su turno y a qué hora normalmente tomaba su descanso para almorzar?",
+    promptEn:
+      "What time did your shift start, and what time did you usually get to take your lunch break?",
+    answerType: "TEXT",
+    priority: 1,
+    displayOrder: -3,
+  },
+  {
+    stableKey: "meal_break.on_duty",
+    category: "meal_and_rest_breaks",
+    promptEs:
+      "Durante su hora de almuerzo, ¿era completamente libre de hacer lo que quisiera, sin tener que hacer nada de trabajo?",
+    promptEn:
+      "During your lunch break, were you completely free to do what you wanted, without having to do any work at all?",
+    answerType: "BOOLEAN",
+    priority: 1,
+    displayOrder: -2,
+  },
+  {
+    stableKey: "termination.wrongful",
+    category: "termination",
+    promptEs: "¿Cree que fue despedido injustamente?",
+    promptEn: "Do you believe you were wrongfully terminated?",
+    answerType: "BOOLEAN",
+    priority: 1,
+    emotionalWeight: 3,
+    displayOrder: -1,
+  },
+];
+
 async function upsertQuestionVersion(
   question: SeedQuestion,
   organizationId: string,
-  adminId: string,
+  options: { staffId?: string | null; fictionalSeed: boolean },
 ) {
+  const staffId = options.staffId ?? null;
   const definition = await prisma.questionDefinition.upsert({
     where: { stableKey: question.stableKey },
     update: {
@@ -1033,9 +1168,9 @@ async function upsertQuestionVersion(
         estimatedEffort: question.estimatedEffort ?? 1,
         legalReviewStatus: "APPROVED",
         displayOrder: question.displayOrder,
-        fictionalSeed: true,
-        createdByStaffId: adminId,
-        approvedByStaffId: adminId,
+        fictionalSeed: options.fictionalSeed,
+        createdByStaffId: staffId,
+        approvedByStaffId: staffId,
         approvedAt: new Date("2026-07-11T00:00:00.000Z"),
       },
     });
@@ -1052,9 +1187,9 @@ async function upsertQuestionVersion(
         estimatedEffort: question.estimatedEffort ?? 1,
         legalReviewStatus: "APPROVED",
         displayOrder: question.displayOrder,
-        fictionalSeed: true,
-        createdByStaffId: adminId,
-        approvedByStaffId: adminId,
+        fictionalSeed: options.fictionalSeed,
+        createdByStaffId: staffId,
+        approvedByStaffId: staffId,
         approvedAt: new Date("2026-07-11T00:00:00.000Z"),
       },
     });
@@ -1139,6 +1274,12 @@ export async function seedDatabase() {
     });
   }
 
+  for (const question of realQuestionSeeds) {
+    await upsertQuestionVersion(question, organization.id, {
+      fictionalSeed: false,
+    });
+  }
+
   if (!allowDemoContent) {
     return;
   }
@@ -1180,7 +1321,10 @@ export async function seedDatabase() {
   });
 
   for (const question of questionSeeds) {
-    await upsertQuestionVersion(question, organization.id, admin.id);
+    await upsertQuestionVersion(question, organization.id, {
+      staffId: admin.id,
+      fictionalSeed: true,
+    });
   }
 
   const invitationToken = "honey-demo-invite";

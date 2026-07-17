@@ -2,6 +2,7 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getMessages } from "@honey/i18n";
 import { AnswerForm } from "@/components/answer-form";
+import { BossHealthBar } from "@/components/boss-health-bar";
 import { LocaleSwitch } from "@/components/locale-switch";
 import { requireClientSession } from "@/lib/authz";
 import { getMissionForClient } from "@/lib/services";
@@ -42,6 +43,13 @@ export default async function MissionPage({
   const progressLabel = messages.missionProgress
     .replace("{current}", String(nextSlot.position))
     .replace("{total}", String(total));
+  const currentHealthPercent = Math.round(
+    ((total - answeredCount) / total) * 100,
+  );
+  const nextHealthPercent = Math.round(
+    ((total - (answeredCount + 1)) / total) * 100,
+  );
+  const isBigHit = (answeredCount + 1) % 3 === 0;
 
   return (
     <main className="page-shell min-h-screen px-4 py-8">
@@ -74,23 +82,15 @@ export default async function MissionPage({
                 {progressLabel}
               </div>
             </div>
-            <div
-              className="mission-pips mt-4"
+            <p
+              className="sr-only"
               role="img"
               aria-label={progressLabel}
-            >
-              {Array.from({ length: total }).map((_, index) => {
-                const state =
-                  index < answeredCount
-                    ? "done"
-                    : index === answeredCount
-                      ? "active"
-                      : "upcoming";
-                return (
-                  <span key={index} className="mission-pip" data-state={state} />
-                );
-              })}
-            </div>
+            />
+            <BossHealthBar
+              currentHealthPercent={currentHealthPercent}
+              nextHealthPercent={nextHealthPercent}
+            />
           </div>
         </div>
 
@@ -108,6 +108,8 @@ export default async function MissionPage({
             locale={locale}
             missionId={mission.id}
             missionSlotId={nextSlot.id}
+            answerType={nextSlot.questionVersion.answerType}
+            isBigHit={isBigHit}
           />
         </div>
       </section>

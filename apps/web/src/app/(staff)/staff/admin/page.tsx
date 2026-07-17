@@ -90,22 +90,26 @@ function DiffRow({
   const state = getDiffState(approved, draft);
 
   return (
-    <div className="rounded-2xl border border-line bg-white p-4">
+    <div className="rounded-2xl border border-line bg-white p-4 text-[#1c1433]">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm font-semibold">{label}</p>
-        <span className="rounded-full border border-line px-3 py-1 text-xs font-semibold">
+        <span className="rounded-full border border-line px-3 py-1 text-xs font-semibold text-[#6b6382]">
           {state}
         </span>
       </div>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] muted">Approved</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#6b6382]">
+            Approved
+          </p>
           <pre className="mt-2 whitespace-pre-wrap rounded-2xl bg-[#f8f3ee] p-3 text-xs leading-6 text-[#46352d]">
             {approved || "(empty)"}
           </pre>
         </div>
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] muted">Draft</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#6b6382]">
+            Draft
+          </p>
           <pre className="mt-2 whitespace-pre-wrap rounded-2xl bg-[#fffaf4] p-3 text-xs leading-6 text-[#46352d]">
             {draft || "(empty)"}
           </pre>
@@ -174,22 +178,26 @@ export default async function AdminPage() {
                 {definition.stableKey}
               </h2>
               <div className="mt-5 grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-line bg-white p-4">
+                <div className="rounded-2xl border border-line bg-white p-4 text-[#1c1433]">
                   <p className="text-sm font-semibold">Version aprobada</p>
                   {approved ? (
                     <>
                       <p className="mt-3 text-sm font-medium">ES</p>
-                      <p className="mt-1 text-sm muted">{approved.promptEs}</p>
+                      <p className="mt-1 text-sm text-[#6b6382]">
+                        {approved.promptEs}
+                      </p>
                       <p className="mt-3 text-sm font-medium">EN</p>
-                      <p className="mt-1 text-sm muted">{approved.promptEn}</p>
+                      <p className="mt-1 text-sm text-[#6b6382]">
+                        {approved.promptEn}
+                      </p>
                     </>
                   ) : (
-                    <p className="mt-3 text-sm muted">
+                    <p className="mt-3 text-sm text-[#6b6382]">
                       Todavia no hay version aprobada.
                     </p>
                   )}
                 </div>
-                <div className="rounded-2xl border border-line bg-white p-4">
+                <div className="rounded-2xl border border-line bg-white p-4 text-[#1c1433]">
                   <p className="text-sm font-semibold">Crear version DRAFT</p>
                   <form
                     action="/api/staff/questions/draft"
@@ -226,7 +234,7 @@ export default async function AdminPage() {
               <div className="mt-5 space-y-5">
                 {drafts.map((draft) => (
                   <div
-                    className="rounded-3xl border border-line bg-[#fcf8f4] p-4"
+                    className="rounded-3xl border border-line bg-[#fcf8f4] p-4 text-[#1c1433]"
                     key={draft.id}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -234,7 +242,7 @@ export default async function AdminPage() {
                         <p className="text-sm font-semibold">
                           DRAFT v{draft.versionNumber}
                         </p>
-                        <p className="text-xs muted">
+                        <p className="text-xs text-[#6b6382]">
                           Usada en {draft.missionSlots.length} snapshots
                         </p>
                       </div>
@@ -329,7 +337,7 @@ export default async function AdminPage() {
                   .filter((version) => version.legalReviewStatus !== "DRAFT")
                   .map((version) => (
                     <div
-                      className="rounded-2xl border border-line bg-white p-4"
+                      className="rounded-2xl border border-line bg-white p-4 text-[#1c1433]"
                       key={version.id}
                     >
                       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -337,7 +345,7 @@ export default async function AdminPage() {
                           <p className="text-sm font-semibold">
                             Version {version.versionNumber}
                           </p>
-                          <p className="text-xs muted">
+                          <p className="text-xs text-[#6b6382]">
                             Estado {version.legalReviewStatus}. Usada en{" "}
                             {version.missionSlots.length} snapshots.
                           </p>

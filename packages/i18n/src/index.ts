@@ -22,7 +22,7 @@ const messages = {
     dashboardBody:
       "Tu progreso se guarda despues de cada respuesta para que puedas pausar y regresar sin perder informacion.",
     dashboardHubLabel: "Centro de misiones Honey",
-    dashboardBriefLabel: "Resumen de campo",
+    dashboardBriefLabel: "Honey dice",
     dashboardMobileReady: "Listo para movil",
     dashboardSafePace: "Ritmo diario seguro",
     dashboardConsoleLabel: "Consola de mision",
@@ -51,6 +51,7 @@ const messages = {
     dailyCapReached:
       "Ya completaste las preguntas disponibles por hoy. Puedes regresar cuando cambie tu fecha local.",
     completeMission: "Mision completada",
+    missionVictoryTitle: "¡Victoria!",
     rewardTitle: "Honey gano una pista por tu participacion",
     notificationSettingsTitle: "Recordatorios de Honey",
     notificationSettingsBody:
@@ -97,7 +98,7 @@ const messages = {
     dashboardBody:
       "Your progress is saved after each answer so you can pause and come back without losing information.",
     dashboardHubLabel: "Honey Mission Hub",
-    dashboardBriefLabel: "Field Brief",
+    dashboardBriefLabel: "Honey says",
     dashboardMobileReady: "Mobile Ready",
     dashboardSafePace: "Daily Safe Pace",
     dashboardConsoleLabel: "Mission Console",
@@ -125,6 +126,7 @@ const messages = {
     dailyCapReached:
       "You have already completed the questions available for today. You can come back when your local date changes.",
     completeMission: "Mission completed",
+    missionVictoryTitle: "Victory!",
     rewardTitle: "Honey earned a clue for your participation",
     notificationSettingsTitle: "Honey reminders",
     notificationSettingsBody:

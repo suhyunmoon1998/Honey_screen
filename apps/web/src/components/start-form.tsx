@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatPhoneInput } from "@/lib/format-phone";
 
 type Props = {
   locale: "es" | "en";
@@ -60,9 +61,11 @@ export function StartForm({ locale }: Props) {
           {locale === "es" ? "Tu numero de telefono" : "Your phone number"}
         </span>
         <input
+          autoComplete="tel"
           className="field"
           inputMode="tel"
-          onChange={(event) => setPhone(event.target.value)}
+          maxLength={14}
+          onChange={(event) => setPhone(formatPhoneInput(event.target.value))}
           placeholder="(555) 555-0101"
           type="tel"
           value={phone}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatPhoneInput } from "@/lib/format-phone";
 
 type Props = {
   token: string;
@@ -20,7 +21,7 @@ export function InvitationFlow({
   defaultPhone,
   messages,
 }: Props) {
-  const [phone, setPhone] = useState(defaultPhone);
+  const [phone, setPhone] = useState(formatPhoneInput(defaultPhone));
   const [code, setCode] = useState("");
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [acceptedMessages, setAcceptedMessages] = useState(false);
@@ -88,9 +89,13 @@ export function InvitationFlow({
       <label className="block">
         <span className="mb-2 block text-sm font-medium">Telefono movil</span>
         <input
+          autoComplete="tel"
           className="field"
+          inputMode="tel"
+          maxLength={14}
+          type="tel"
           value={phone}
-          onChange={(event) => setPhone(event.target.value)}
+          onChange={(event) => setPhone(formatPhoneInput(event.target.value))}
         />
       </label>
 

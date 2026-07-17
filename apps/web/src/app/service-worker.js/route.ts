@@ -40,7 +40,6 @@ function classify(request) {
     url.pathname.startsWith("/mission/") ||
     url.pathname.startsWith("/dashboard") ||
     url.pathname.startsWith("/reward") ||
-    url.pathname.startsWith("/onboarding") ||
     url.pathname.startsWith("/staff/") ||
     url.pathname.startsWith("/invite/")
   ) {

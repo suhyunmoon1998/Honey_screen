@@ -354,7 +354,7 @@ export function getRequestedMissionSize(
     return 5;
   }
 
-  return Math.min(10, Math.max(0, remainingDailyAllowance));
+  return Math.min(12, Math.max(0, remainingDailyAllowance));
 }
 
 export function getLocalDateInTimeZone(date: Date, timeZone: string) {

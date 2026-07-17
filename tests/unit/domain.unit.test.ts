@@ -188,7 +188,7 @@ describe("domain policies", () => {
 
   it("full mission respects remaining daily allowance", () => {
     expect(getRequestedMissionSize("FULL", 4)).toBe(4);
-    expect(getRequestedMissionSize("FULL", 12)).toBe(10);
+    expect(getRequestedMissionSize("FULL", 15)).toBe(12);
   });
 
   it("evaluates branch rule all", () => {

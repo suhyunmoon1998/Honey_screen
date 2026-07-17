@@ -51,7 +51,7 @@ export default async function DashboardPage({
     {
       href: "/api/client/missions/start?kind=full",
       label: messages.fullMission,
-      hits: 10,
+      hits: 12,
       tone: "from-[#a689ff] via-[#7c5cff] to-[#1c9d74]",
     },
   ];

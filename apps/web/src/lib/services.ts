@@ -206,8 +206,8 @@ export async function getInvitationPreview(token: string) {
   return invitation;
 }
 
-export async function createInvitationForClient(input: {
-  actorId: string;
+async function createInvitationAndSendSms(input: {
+  organizationId: string;
   rawPhone: string;
   locale: Locale;
 }) {
@@ -216,34 +216,16 @@ export async function createInvitationForClient(input: {
   const token = randomBytes(16).toString("hex");
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-  const invitation = await prisma.$transaction(async (tx) => {
-    const actor = await getAuthorizedStaffActor(tx, input.actorId, "STAFF");
-
-    const created = await tx.invitation.create({
-      data: {
-        organizationId: actor.organizationId,
-        tokenHash: hashToken(token),
-        phoneE164,
-        locale: input.locale,
-        timeZone: env.ORGANIZATION_DEFAULT_TIME_ZONE,
-        expiresAt,
-        eligibleForDeletionAt: expiresAt,
-      },
-    });
-
-    await tx.auditEvent.create({
-      data: {
-        organizationId: actor.organizationId,
-        actorType: "STAFF",
-        actorId: actor.id,
-        action: "INVITATION_CREATED",
-        targetType: "INVITATION",
-        targetId: created.id,
-        metadataJson: {},
-      },
-    });
-
-    return created;
+  const invitation = await prisma.invitation.create({
+    data: {
+      organizationId: input.organizationId,
+      tokenHash: hashToken(token),
+      phoneE164,
+      locale: input.locale,
+      timeZone: env.ORGANIZATION_DEFAULT_TIME_ZONE,
+      expiresAt,
+      eligibleForDeletionAt: expiresAt,
+    },
   });
 
   const inviteUrl = new URL(`/invite/${token}`, env.APP_URL).toString();
@@ -268,7 +250,56 @@ export async function createInvitationForClient(input: {
     throw new Error("INVITATION_SMS_FAILED");
   }
 
-  return { invitation, inviteUrl };
+  return { invitation, inviteUrl, phoneE164 };
+}
+
+export async function createInvitationForClient(input: {
+  actorId: string;
+  rawPhone: string;
+  locale: Locale;
+}) {
+  const actor = await prisma.$transaction(async (tx) =>
+    getAuthorizedStaffActor(tx, input.actorId, "STAFF"),
+  );
+
+  const result = await createInvitationAndSendSms({
+    organizationId: actor.organizationId,
+    rawPhone: input.rawPhone,
+    locale: input.locale,
+  });
+
+  await prisma.auditEvent.create({
+    data: {
+      organizationId: actor.organizationId,
+      actorType: "STAFF",
+      actorId: actor.id,
+      action: "INVITATION_CREATED",
+      targetType: "INVITATION",
+      targetId: result.invitation.id,
+      metadataJson: {},
+    },
+  });
+
+  return result;
+}
+
+/**
+ * Public, unauthenticated self-service entry point: a worker types their own
+ * phone number on the marketing site and gets the screening link by SMS to
+ * continue on their own device. Single-tenant assumption — resolves to
+ * whichever organization exists.
+ */
+export async function startSelfServiceInvitation(input: {
+  rawPhone: string;
+  locale: Locale;
+}) {
+  const organization = await prisma.organization.findFirstOrThrow();
+
+  return createInvitationAndSendSms({
+    organizationId: organization.id,
+    rawPhone: input.rawPhone,
+    locale: input.locale,
+  });
 }
 
 export async function requestOtp(input: {
@@ -1006,7 +1037,7 @@ export async function getOrCreateMission(input: {
           },
         });
 
-        const remainingDailyAllowance = Math.max(0, 10 - ledgerEntries.length);
+        const remainingDailyAllowance = Math.max(0, 12 - ledgerEntries.length);
 
         const answeredContext = await getRuleContextForClient(
           tx,

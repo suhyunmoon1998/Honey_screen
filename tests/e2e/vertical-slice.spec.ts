@@ -93,10 +93,6 @@ async function completeInvitationFlow(
   await page
     .getByRole("button", { name: /Verificar codigo|Verify code/i })
     .click();
-  await expect(page).toHaveURL(/\/onboarding$/);
-  await page
-    .getByRole("link", { name: /Continuar al tablero|Continue to dashboard/i })
-    .click();
   await expect(page).toHaveURL(/\/dashboard$/);
 }
 
@@ -172,7 +168,7 @@ test("Spanish invitation to mission completion and staff notifications", async (
     expect(verifyResponse.status()).toBe(200);
     expect(verifyHeaders["cache-control"]).toBe("no-store");
 
-    await expect(page).toHaveURL(/\/onboarding$/);
+    await expect(page).toHaveURL(/\/dashboard$/);
 
     await expect
       .poll(async () => {

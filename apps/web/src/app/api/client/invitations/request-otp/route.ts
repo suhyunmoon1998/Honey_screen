@@ -29,7 +29,7 @@ export async function POST(request: Request) {
         expiresAt: result.session.session.expiresAt,
       });
 
-      return noStoreJson({ redirectTo: "/onboarding" });
+      return noStoreJson({ redirectTo: "/api/client/onboarding/complete" });
     }
 
     const result = await requestOtp({

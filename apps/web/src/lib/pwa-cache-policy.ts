@@ -63,7 +63,6 @@ export function classifyServiceWorkerRequest(input: {
     pathname.startsWith("/mission/") ||
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/reward") ||
-    pathname.startsWith("/onboarding") ||
     pathname.startsWith("/staff/") ||
     pathname.startsWith("/invite/")
   ) {

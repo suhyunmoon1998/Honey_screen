@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       expiresAt: result.session.session.expiresAt,
     });
 
-    return noStoreJson({ redirectTo: "/onboarding" });
+    return noStoreJson({ redirectTo: "/api/client/onboarding/complete" });
   } catch {
     return noStoreJson(
       { error: "No fue posible verificar el codigo." },

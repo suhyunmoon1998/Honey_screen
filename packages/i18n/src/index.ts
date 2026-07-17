@@ -82,6 +82,8 @@ const messages = {
     staffNotifications: "Notificaciones del equipo",
     signOut: "Cerrar sesion",
     switchLanguage: "English",
+    callJackLabel: "Llamar a Jack",
+    callJackBody: "Habla directo con nuestro equipo si tienes preguntas.",
   },
   en: {
     appName: "Honey Case Adventure",
@@ -158,6 +160,8 @@ const messages = {
     staffNotifications: "Team notifications",
     signOut: "Sign out",
     switchLanguage: "Español",
+    callJackLabel: "Call Jack",
+    callJackBody: "Talk directly with our team if you have questions.",
   },
 } as const;
 

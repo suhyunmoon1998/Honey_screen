@@ -3,10 +3,14 @@ import Link from "next/link";
 import { getMessages } from "@honey/i18n";
 import { prisma } from "@honey/db";
 import { HONEY_LEVELS } from "@honey/domain";
+import { LocaleSwitch } from "@/components/locale-switch";
 import { SignOutForm } from "@/components/signout-form";
 import { requireClientSession } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
+
+const JACK_PHONE_E164 = "+18665225529";
+const JACK_PHONE_DISPLAY = "+1 866 522 5529";
 
 export default async function DashboardPage({
   searchParams,
@@ -59,6 +63,13 @@ export default async function DashboardPage({
   return (
     <main className="page-shell min-h-screen px-4 py-6 sm:py-8">
       <section className="mx-auto max-w-md space-y-5">
+        <div className="flex justify-end">
+          <LocaleSwitch
+            currentLocale={locale}
+            redirectTo="/dashboard"
+            label={messages.switchLanguage}
+          />
+        </div>
         <div className="relative overflow-hidden rounded-[28px] bg-[linear-gradient(160deg,#1c1433_0%,#3a2a66_45%,#1c9d74_120%)] p-5 pb-0 text-[#ece7fb]">
           <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(166,137,255,0.32),transparent_70%)]" />
 
@@ -174,6 +185,17 @@ export default async function DashboardPage({
             <SignOutForm />
           </div>
         </div>
+
+        <a
+          className="button-secondary flex items-center justify-center gap-2 text-center text-base"
+          href={`tel:${JACK_PHONE_E164}`}
+        >
+          <span aria-hidden="true">📞</span>
+          {messages.callJackLabel}
+        </a>
+        <p className="px-1 text-center text-xs muted">
+          {messages.callJackBody} {JACK_PHONE_DISPLAY}
+        </p>
       </section>
     </main>
   );

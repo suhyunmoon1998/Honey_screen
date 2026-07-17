@@ -11,7 +11,6 @@ import { getDashboardMissionStatus } from "@/lib/services";
 export const dynamic = "force-dynamic";
 
 const JACK_PHONE_E164 = "+18665225529";
-const JACK_PHONE_DISPLAY = "+1 866 522 5529";
 
 export default async function DashboardPage({
   searchParams,
@@ -63,15 +62,13 @@ export default async function DashboardPage({
       hits: 12,
       tone: "from-[#a689ff] via-[#7c5cff] to-[#1c9d74]",
     },
-  ].filter((choice) => choice.hits <= missionStatus.remainingDailyAllowance);
+  ];
 
-  const isAllCaughtUp =
-    !activeMission &&
-    (!missionStatus.hasUnansweredQuestions || missionChoices.length === 0);
+  const isAllCaughtUp = !activeMission && !missionStatus.hasUnansweredQuestions;
 
   return (
     <main className="page-shell min-h-screen px-4 py-6 sm:py-8">
-      <section className="mx-auto max-w-md space-y-5">
+      <section className="mx-auto max-w-md space-y-3">
         <div className="flex justify-end">
           <LocaleSwitch
             currentLocale={locale}
@@ -79,7 +76,7 @@ export default async function DashboardPage({
             label={messages.switchLanguage}
           />
         </div>
-        <div className="relative overflow-hidden rounded-[28px] bg-[linear-gradient(160deg,#1c1433_0%,#3a2a66_45%,#1c9d74_120%)] p-5 pb-0 text-[#ece7fb]">
+        <div className="relative overflow-hidden rounded-[24px] bg-[linear-gradient(160deg,#1c1433_0%,#3a2a66_45%,#1c9d74_120%)] p-4 pb-0 text-[#ece7fb]">
           <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(166,137,255,0.32),transparent_70%)]" />
 
           <div className="relative flex items-start justify-between gap-3">
@@ -87,7 +84,7 @@ export default async function DashboardPage({
               <p className="pixel-label text-white/70">
                 {messages.dashboardHubLabel}
               </p>
-              <h1 className="mt-2 text-2xl font-semibold">
+              <h1 className="mt-1 text-xl font-semibold leading-tight">
                 {messages.dashboardTitle}
               </h1>
             </div>
@@ -97,8 +94,8 @@ export default async function DashboardPage({
           </div>
           <p className="relative mt-1 text-xs text-[#c9b8ff]">{levelTitle}</p>
 
-          <div className="relative mt-4 flex items-end gap-3">
-            <div className="honey-float glow-purple h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-white/25 bg-[#150f28]">
+          <div className="relative mt-3 flex items-center gap-3">
+            <div className="honey-float glow-purple h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-white/25 bg-[#150f28]">
               <Image
                 src="/honey-avatar.png"
                 alt="Honey"
@@ -109,38 +106,30 @@ export default async function DashboardPage({
               />
             </div>
 
-            <div className="speech-bubble relative flex-1 rounded-[24px] border border-white/12 bg-white/8 p-4 backdrop-blur-sm">
-              <p className="pixel-label text-[#c9b8ff]">
-                {messages.dashboardBriefLabel}
-              </p>
-              <p className="mt-3 text-sm leading-6 text-white/85">
+            <div className="speech-bubble relative flex-1 rounded-[20px] border border-white/12 bg-white/8 px-3 py-2 backdrop-blur-sm">
+              <p className="text-sm leading-5 text-white/85">
                 {messages.dashboardBody}
               </p>
             </div>
           </div>
 
           {!activeMission ? (
-            <div className="relative mt-5 flex items-center gap-3 rounded-t-[20px] bg-black/30 px-5 py-3 -mx-5">
-              <div className="boss-peek h-11 w-11 shrink-0 overflow-hidden rounded-full border-2 border-[#f05252]/70 bg-[#150f28]">
+            <div className="relative mt-3 flex items-center gap-2 rounded-t-[16px] bg-black/30 px-4 py-2 -mx-4">
+              <div className="boss-peek h-8 w-8 shrink-0 overflow-hidden rounded-full border-2 border-[#f05252]/70 bg-[#150f28]">
                 <Image
                   src="/boss-goblin-face.png"
                   alt=""
-                  width={88}
-                  height={88}
+                  width={64}
+                  height={64}
                   className="h-full w-full object-cover"
                 />
               </div>
-              <div className="flex-1">
-                <p className="pixel-label text-[#ff9d9d]">
-                  {messages.dashboardBossTeaserLabel}
-                </p>
-                <p className="mt-1 text-sm font-semibold text-white/90">
-                  {messages.dashboardBossTeaserBody}
-                </p>
-              </div>
+              <p className="text-xs font-semibold text-[#ff9d9d]">
+                {messages.dashboardBossTeaserLabel}
+              </p>
             </div>
           ) : (
-            <div className="h-5" />
+            <div className="h-2" />
           )}
         </div>
 
@@ -154,7 +143,7 @@ export default async function DashboardPage({
           </span>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           {query?.status === "daily-cap" && !isAllCaughtUp ? (
             <p className="rounded-2xl border border-[#4a3b7a] bg-[#241c3e] px-4 py-3 text-sm text-[#c9b8ff]">
               {messages.dailyCapReached}
@@ -174,31 +163,27 @@ export default async function DashboardPage({
               </p>
             </>
           ) : isAllCaughtUp ? (
-            <div className="rounded-[22px] border border-[#2f5f4c] bg-[#152a22] px-5 py-4 text-center">
-              <p className="text-lg font-semibold text-[#a9f5d6]">
-                {missionStatus.hasUnansweredQuestions
-                  ? messages.dailyCapReached
-                  : messages.dashboardAllDoneTitle}
+            <div className="rounded-[20px] border border-[#2f5f4c] bg-[#152a22] px-4 py-3 text-center">
+              <p className="text-base font-semibold text-[#a9f5d6]">
+                {messages.dashboardAllDoneTitle}
               </p>
-              {!missionStatus.hasUnansweredQuestions ? (
-                <p className="mt-2 text-sm text-[#8fd9bb]">
-                  {messages.dashboardAllDoneBody}
-                </p>
-              ) : null}
+              <p className="mt-1 text-xs text-[#8fd9bb]">
+                {messages.dashboardAllDoneBody}
+              </p>
             </div>
           ) : (
             missionChoices.map((choice) => (
               <Link
                 key={choice.href}
-                className={`block overflow-hidden rounded-[22px] bg-gradient-to-r ${choice.tone} px-4 py-3 text-[#0c0a1d] shadow-[0_12px_30px_rgba(0,0,0,0.35)] transition-transform active:scale-[0.98]`}
+                className={`block overflow-hidden rounded-[18px] bg-gradient-to-r ${choice.tone} px-4 py-2.5 text-[#0c0a1d] shadow-[0_12px_30px_rgba(0,0,0,0.35)] transition-transform active:scale-[0.98]`}
                 href={choice.href}
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-black/60">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-black/60">
                       {choice.hits} {messages.dashboardHitsLabel}
                     </p>
-                    <p className="text-base font-semibold">{choice.label}</p>
+                    <p className="text-sm font-semibold">{choice.label}</p>
                   </div>
                   <span aria-hidden="true" className="text-xl font-semibold">
                     ›
@@ -209,22 +194,18 @@ export default async function DashboardPage({
           )}
         </div>
 
-        <div className="flex justify-end px-1 text-sm">
-          <div className="w-32">
+        <div className="flex items-center gap-2">
+          <a
+            className="button-secondary flex flex-1 items-center justify-center gap-1.5 text-center text-sm"
+            href={`tel:${JACK_PHONE_E164}`}
+          >
+            <span aria-hidden="true">📞</span>
+            {messages.callJackLabel}
+          </a>
+          <div className="flex-1">
             <SignOutForm />
           </div>
         </div>
-
-        <a
-          className="button-secondary flex items-center justify-center gap-2 text-center text-base"
-          href={`tel:${JACK_PHONE_E164}`}
-        >
-          <span aria-hidden="true">📞</span>
-          {messages.callJackLabel}
-        </a>
-        <p className="px-1 text-center text-xs muted">
-          {messages.callJackBody} {JACK_PHONE_DISPLAY}
-        </p>
       </section>
     </main>
   );

@@ -283,6 +283,86 @@ export async function createInvitationForClient(input: {
   return result;
 }
 
+export type CaseStatus =
+  | "NEW"
+  | "UNDER_REVIEW"
+  | "QUALIFIED"
+  | "NOT_QUALIFIED"
+  | "CALLED"
+  | "CLOSED";
+
+export type CaseNoteType = "EVALUATION" | "CALL_LOG" | "GENERAL";
+
+export async function setClientCaseStatus(input: {
+  actorId: string;
+  clientId: string;
+  caseStatus: CaseStatus;
+}) {
+  return prisma.$transaction(async (tx) => {
+    const actor = await getAuthorizedStaffActor(tx, input.actorId, "STAFF");
+    const client = await tx.client.findFirstOrThrow({
+      where: { id: input.clientId, organizationId: actor.organizationId },
+    });
+
+    const updated = await tx.client.update({
+      where: { id: client.id },
+      data: { caseStatus: input.caseStatus },
+    });
+
+    await tx.auditEvent.create({
+      data: {
+        organizationId: actor.organizationId,
+        actorType: "STAFF",
+        actorId: actor.id,
+        action: "CLIENT_CASE_STATUS_UPDATED",
+        targetType: "CLIENT",
+        targetId: updated.id,
+        metadataJson: { caseStatus: input.caseStatus },
+      },
+    });
+
+    return updated;
+  });
+}
+
+export async function addCaseNote(input: {
+  actorId: string;
+  clientId: string;
+  noteType: CaseNoteType;
+  body: string;
+}) {
+  return prisma.$transaction(async (tx) => {
+    const actor = await getAuthorizedStaffActor(tx, input.actorId, "STAFF");
+    const client = await tx.client.findFirstOrThrow({
+      where: { id: input.clientId, organizationId: actor.organizationId },
+    });
+
+    const note = await tx.caseNote.create({
+      data: {
+        organizationId: actor.organizationId,
+        clientId: client.id,
+        staffId: actor.id,
+        noteType: input.noteType,
+        body: input.body,
+      },
+    });
+
+    await tx.auditEvent.create({
+      data: {
+        organizationId: actor.organizationId,
+        actorType: "STAFF",
+        actorId: actor.id,
+        action: "CLIENT_CASE_NOTE_ADDED",
+        targetType: "CLIENT",
+        targetId: client.id,
+        metadataJson: { noteType: input.noteType },
+      },
+    });
+
+    return note;
+  });
+}
+
 /**
  * Public, unauthenticated self-service entry point: a worker types their own
  * phone number on the marketing site and gets the screening link by SMS to

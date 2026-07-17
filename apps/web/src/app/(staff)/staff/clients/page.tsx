@@ -19,6 +19,15 @@ const STATUS_MESSAGES: Record<string, { text: string; tone: "ok" | "error" }> = 
   },
 };
 
+const CASE_STATUS_LABELS: Record<string, string> = {
+  NEW: "Nuevo",
+  UNDER_REVIEW: "En revision",
+  QUALIFIED: "Calificado",
+  NOT_QUALIFIED: "No calificado",
+  CALLED: "Contactado",
+  CLOSED: "Cerrado",
+};
+
 export default async function StaffClientsPage({
   searchParams,
 }: {
@@ -106,6 +115,7 @@ export default async function StaffClientsPage({
             <thead>
               <tr className="border-b border-line bg-white/60 text-left text-[#1c1433]">
                 <th className="px-4 py-3 font-semibold">Telefono</th>
+                <th className="px-4 py-3 font-semibold">Estado del caso</th>
                 <th className="px-4 py-3 font-semibold">Idioma</th>
                 <th className="px-4 py-3 font-semibold">Registrado</th>
                 <th className="px-4 py-3 font-semibold">Mision activa</th>
@@ -127,12 +137,20 @@ export default async function StaffClientsPage({
                     className="border-b border-line bg-white text-[#1c1433]"
                   >
                     <td className="px-4 py-3 font-medium">
-                      {client.phoneE164}
+                      <a className="hover:underline" href={`tel:${client.phoneE164}`}>
+                        {client.phoneE164}
+                      </a>
                       {client.legalHold ? (
                         <span className="ml-2 rounded-full bg-[#f3ebe2] px-2 py-0.5 text-xs uppercase tracking-[0.15em]">
                           Retencion legal
                         </span>
                       ) : null}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="rounded-full bg-[#ece7fb] px-2 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-[#3a2a66]">
+                        {CASE_STATUS_LABELS[client.caseStatus] ??
+                          client.caseStatus}
+                      </span>
                     </td>
                     <td className="px-4 py-3 uppercase text-[#6b6382]">
                       {client.locale}

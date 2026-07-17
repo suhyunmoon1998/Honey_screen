@@ -13,13 +13,31 @@ function formatAnswer(valueJson: unknown) {
   return String(valueJson);
 }
 
+const CASE_STATUS_LABELS: Record<string, string> = {
+  NEW: "Nuevo",
+  UNDER_REVIEW: "En revision",
+  QUALIFIED: "Calificado",
+  NOT_QUALIFIED: "No calificado",
+  CALLED: "Contactado",
+  CLOSED: "Cerrado",
+};
+
+const NOTE_TYPE_LABELS: Record<string, string> = {
+  EVALUATION: "Evaluacion",
+  CALL_LOG: "Registro de llamada",
+  GENERAL: "General",
+};
+
 export default async function StaffClientDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ clientId: string }>;
+  searchParams?: Promise<{ status?: string }>;
 }) {
   const session = await requireStaffSession("STAFF");
   const { clientId } = await params;
+  const query = searchParams ? await searchParams : undefined;
 
   // Scoped to the staff member's own organization — never trust a
   // client-supplied organization id. See docs/RISK_REGISTER.md R2.
@@ -35,6 +53,9 @@ export default async function StaffClientDetailPage({
       },
       rewardGrants: {
         include: { rewardDefinition: true },
+      },
+      caseNotes: {
+        orderBy: { createdAt: "desc" },
       },
       missions: {
         orderBy: { createdAt: "desc" },
@@ -59,6 +80,15 @@ export default async function StaffClientDetailPage({
     notFound();
   }
 
+  const noteStaffIds = [...new Set(client.caseNotes.map((note) => note.staffId))];
+  const noteStaff = noteStaffIds.length
+    ? await prisma.staffUser.findMany({
+        where: { id: { in: noteStaffIds } },
+        select: { id: true, displayName: true },
+      })
+    : [];
+  const staffNameById = new Map(noteStaff.map((staff) => [staff.id, staff.displayName]));
+
   await prisma.auditEvent.create({
     data: {
       organizationId: session.organizationId,
@@ -78,20 +108,69 @@ export default async function StaffClientDetailPage({
           &larr; Volver a clientes
         </Link>
 
+        {query?.status === "update-failed" ? (
+          <p className="rounded-2xl border border-[#f05252]/40 bg-[#2f1a1a] px-4 py-3 text-sm text-[#f5b8b8]">
+            No se pudo actualizar el estado del caso.
+          </p>
+        ) : null}
+        {query?.status === "note-failed" ? (
+          <p className="rounded-2xl border border-[#f05252]/40 bg-[#2f1a1a] px-4 py-3 text-sm text-[#f5b8b8]">
+            No se pudo guardar la nota.
+          </p>
+        ) : null}
+
         <div className="card p-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-3xl font-semibold">{client.phoneE164}</h1>
-            {client.legalHold ? (
-              <span className="rounded-full bg-[#f3ebe2] px-3 py-1 text-xs uppercase tracking-[0.15em]">
-                Retencion legal
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-3xl font-semibold">{client.phoneE164}</h1>
+              <span className="rounded-full bg-[#ece7fb] px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-[#3a2a66]">
+                {CASE_STATUS_LABELS[client.caseStatus] ?? client.caseStatus}
               </span>
-            ) : null}
-            {client.deletedAt ? (
-              <span className="rounded-full bg-[#f6dede] px-3 py-1 text-xs uppercase tracking-[0.15em] text-[#8a2b2b]">
-                Eliminado
-              </span>
-            ) : null}
+              {client.legalHold ? (
+                <span className="rounded-full bg-[#f3ebe2] px-3 py-1 text-xs uppercase tracking-[0.15em]">
+                  Retencion legal
+                </span>
+              ) : null}
+              {client.deletedAt ? (
+                <span className="rounded-full bg-[#f6dede] px-3 py-1 text-xs uppercase tracking-[0.15em] text-[#8a2b2b]">
+                  Eliminado
+                </span>
+              ) : null}
+            </div>
+            <a
+              className="button-primary px-4 py-2 text-sm"
+              href={`tel:${client.phoneE164}`}
+            >
+              Llamar
+            </a>
           </div>
+
+          <form
+            action={`/api/staff/clients/${client.id}/case-status`}
+            className="mt-4 flex flex-wrap items-end gap-3"
+            method="post"
+          >
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium">
+                Estado del caso
+              </span>
+              <select
+                className="field"
+                defaultValue={client.caseStatus}
+                name="caseStatus"
+              >
+                {Object.entries(CASE_STATUS_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button className="button-secondary" type="submit">
+              Actualizar estado
+            </button>
+          </form>
+
           <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
             <div>
               <dt className="muted">Idioma</dt>
@@ -136,6 +215,62 @@ export default async function StaffClientDetailPage({
             </div>
           </div>
         ) : null}
+
+        <div className="card p-6">
+          <h2 className="text-xl font-semibold">Evaluacion y llamadas</h2>
+          <form
+            action={`/api/staff/clients/${client.id}/notes`}
+            className="mt-4 space-y-3"
+            method="post"
+          >
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium">Tipo</span>
+              <select className="field" name="noteType">
+                {Object.entries(NOTE_TYPE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium">Nota</span>
+              <textarea
+                className="field min-h-24"
+                name="body"
+                placeholder="Resultado de la evaluacion o de la llamada..."
+                required
+              />
+            </label>
+            <button className="button-primary" type="submit">
+              Guardar nota
+            </button>
+          </form>
+
+          {client.caseNotes.length > 0 ? (
+            <div className="mt-6 space-y-2">
+              {client.caseNotes.map((note) => (
+                <div
+                  key={note.id}
+                  className="rounded-2xl border border-line bg-white p-4 text-sm text-[#1c1433]"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="rounded-full bg-[#f3ebe2] px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-[#6b6382]">
+                      {NOTE_TYPE_LABELS[note.noteType] ?? note.noteType}
+                    </span>
+                    <span className="text-xs text-[#6b6382]">
+                      {staffNameById.get(note.staffId) ?? note.staffId} &middot;{" "}
+                      {note.createdAt.toISOString().slice(0, 16)}
+                    </span>
+                  </div>
+                  <p className="mt-2 whitespace-pre-wrap">{note.body}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm muted">Todavia no hay notas.</p>
+          )}
+        </div>
 
         {client.missions.map((mission) => (
           <div className="card p-6" key={mission.id}>

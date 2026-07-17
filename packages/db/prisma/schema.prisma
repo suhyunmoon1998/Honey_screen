@@ -58,6 +58,21 @@ enum ReviewFlagState {
   DISMISSED
 }
 
+enum CaseStatus {
+  NEW
+  UNDER_REVIEW
+  QUALIFIED
+  NOT_QUALIFIED
+  CALLED
+  CLOSED
+}
+
+enum CaseNoteType {
+  EVALUATION
+  CALL_LOG
+  GENERAL
+}
+
 enum HoneyState {
   NEUTRAL
   INVESTIGATING
@@ -190,6 +205,7 @@ model Client {
   deletionApprovedAt    DateTime?
   restrictedAt          DateTime?
   deletedAt             DateTime?
+  caseStatus            CaseStatus        @default(NEW)
   organization          Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   consents              ConsentRecord[]
   missions              Mission[]
@@ -197,6 +213,7 @@ model Client {
   answerRevisions       AnswerRevision[]
   idempotencyRecords    IdempotencyRecord[]
   reviewFlags           ReviewFlag[]
+  caseNotes             CaseNote[]
   clarifications        ClarificationRequest[]
   progressEvents        ProgressEvent[]
   rewardGrants          RewardGrant[]
@@ -536,6 +553,19 @@ model ReviewFlag {
   client            Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@unique([clientId, answerRevisionId, flagType])
+}
+
+model CaseNote {
+  id             String       @id @default(cuid())
+  organizationId String
+  clientId       String
+  staffId        String
+  noteType       CaseNoteType
+  body           String
+  createdAt      DateTime     @default(now())
+  client         Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, clientId, createdAt])
 }
 
 model ClarificationRequest {

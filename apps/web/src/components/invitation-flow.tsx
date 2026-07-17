@@ -5,6 +5,7 @@ import { useState } from "react";
 type Props = {
   token: string;
   locale: "es" | "en";
+  defaultPhone: string;
   messages: {
     privacyConsent: string;
     messageConsent: string;
@@ -13,8 +14,13 @@ type Props = {
   };
 };
 
-export function InvitationFlow({ token, locale, messages }: Props) {
-  const [phone, setPhone] = useState("(555) 555-0101");
+export function InvitationFlow({
+  token,
+  locale,
+  defaultPhone,
+  messages,
+}: Props) {
+  const [phone, setPhone] = useState(defaultPhone);
   const [code, setCode] = useState("");
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [acceptedMessages, setAcceptedMessages] = useState(false);

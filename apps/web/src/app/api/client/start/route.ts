@@ -13,12 +13,15 @@ export async function POST(request: Request) {
     const body = schema.parse(await request.json());
     const locale = resolveLocale(body.locale);
 
-    await startSelfServiceInvitation({
+    const result = await startSelfServiceInvitation({
       rawPhone: body.rawPhone,
       locale,
     });
 
-    return noStoreJson({ status: "sent" });
+    return noStoreJson({
+      status: "sent",
+      redirectTo: `/invite/${result.token}`,
+    });
   } catch {
     return noStoreJson(
       { error: "No fue posible enviar el enlace." },

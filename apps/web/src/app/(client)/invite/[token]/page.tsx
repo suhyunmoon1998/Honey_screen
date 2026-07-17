@@ -57,6 +57,7 @@ export default async function InvitationPage({
           <InvitationFlow
             token={token}
             locale={locale}
+            defaultPhone={invitation.phoneE164}
             messages={{
               privacyConsent: messages.privacyConsent,
               messageConsent: messages.messageConsent,

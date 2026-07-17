@@ -26,7 +26,18 @@ export function StartForm({ locale }: Props) {
         body: JSON.stringify({ rawPhone: phone, locale }),
       });
 
-      setStatus(response.ok ? "sent" : "error");
+      const data = await response.json();
+
+      if (!response.ok) {
+        setStatus("error");
+        return;
+      }
+
+      setStatus("sent");
+
+      if (data.redirectTo) {
+        window.location.href = data.redirectTo;
+      }
     } catch {
       setStatus("error");
     }
@@ -36,8 +47,8 @@ export function StartForm({ locale }: Props) {
     return (
       <div className="mt-6 rounded-2xl border border-[#3ee8a8]/40 bg-[#1a2f2a] px-4 py-4 text-sm text-[#a9f5d6]">
         {locale === "es"
-          ? "Listo. Revisa tus mensajes de texto para continuar."
-          : "Done. Check your text messages to continue."}
+          ? "Listo. Tambien te enviamos el enlace por mensaje de texto."
+          : "Done. We also texted you the link."}
       </div>
     );
   }

@@ -250,7 +250,7 @@ async function createInvitationAndSendSms(input: {
     throw new Error("INVITATION_SMS_FAILED");
   }
 
-  return { invitation, inviteUrl, phoneE164 };
+  return { invitation, inviteUrl, phoneE164, token };
 }
 
 export async function createInvitationForClient(input: {

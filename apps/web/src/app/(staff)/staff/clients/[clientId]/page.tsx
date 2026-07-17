@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@honey/db";
 import { requireStaffSession } from "@/lib/authz";
+import { translateToEnglish } from "@/lib/translate";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +89,30 @@ export default async function StaffClientDetailPage({
       })
     : [];
   const staffNameById = new Map(noteStaff.map((staff) => [staff.id, staff.displayName]));
+
+  const translatableAnswers =
+    client.locale === "es"
+      ? client.missions.flatMap((mission) =>
+          mission.slots
+            .filter(
+              (slot) =>
+                slot.questionVersion.answerType === "TEXT" &&
+                typeof slot.answerRevisions[0]?.valueJson === "string",
+            )
+            .map((slot) => ({
+              slotId: slot.id,
+              text: slot.answerRevisions[0]!.valueJson as string,
+            })),
+        )
+      : [];
+
+  const translationEntries = await Promise.all(
+    translatableAnswers.map(async ({ slotId, text }) => [
+      slotId,
+      await translateToEnglish(text),
+    ] as const),
+  );
+  const translationBySlotId = new Map(translationEntries);
 
   await prisma.auditEvent.create({
     data: {
@@ -291,6 +316,7 @@ export default async function StaffClientDetailPage({
             <div className="mt-4 space-y-3">
               {mission.slots.map((slot) => {
                 const latestAnswer = slot.answerRevisions[0];
+                const translation = translationBySlotId.get(slot.id);
 
                 return (
                   <div
@@ -304,15 +330,25 @@ export default async function StaffClientDetailPage({
                       {slot.questionVersion.promptEn}
                     </p>
                     {latestAnswer ? (
-                      <p className="mt-2 text-sm">
-                        <span className="font-semibold">Answer:</span>{" "}
-                        {formatAnswer(latestAnswer.valueJson)}
-                        <span className="text-[#6b6382]">
-                          {" "}
-                          &middot;{" "}
-                          {latestAnswer.createdAt.toISOString().slice(0, 16)}
-                        </span>
-                      </p>
+                      <>
+                        <p className="mt-2 text-sm">
+                          <span className="font-semibold">Answer:</span>{" "}
+                          {formatAnswer(latestAnswer.valueJson)}
+                          <span className="text-[#6b6382]">
+                            {" "}
+                            &middot;{" "}
+                            {latestAnswer.createdAt.toISOString().slice(0, 16)}
+                          </span>
+                        </p>
+                        {translation ? (
+                          <p className="mt-1 text-sm text-[#6b6382]">
+                            <span className="font-semibold">
+                              Translation (EN):
+                            </span>{" "}
+                            {translation}
+                          </p>
+                        ) : null}
+                      </>
                     ) : (
                       <p className="mt-2 text-sm text-[#6b6382]">
                         Not answered

@@ -256,9 +256,6 @@ test("Spanish invitation to mission completion and staff notifications", async (
 
     try {
       await staffPage.goto("/staff/login");
-      await staffPage
-        .getByLabel(/Correo/i)
-        .fill("staff.fictional@jacklaw.example");
       await staffPage.getByLabel(/Contrasena/i).fill("jacklaw123");
       await staffPage.getByRole("button", { name: /Entrar/i }).click();
 
@@ -497,45 +494,24 @@ test("two browser contexts starting together still stay within one mission and o
   }
 });
 
-test("staff can view content and admin can compare, draft, and approve versions", async ({
+test("admin can view content, draft, and approve versions", async ({
   browser,
 }, testInfo) => {
-  const staffPage = await browser.newPage();
   const adminPage = await browser.newPage();
-  const finalizeStaffArtifacts = await attachFailureArtifacts(
-    staffPage,
-    testInfo,
-  );
   const finalizeAdminArtifacts = await attachFailureArtifacts(
     adminPage,
     testInfo,
   );
 
   try {
-    await staffPage.goto("/staff/login");
-    await staffPage
-      .getByLabel(/Correo/i)
-      .fill("staff.fictional@jacklaw.example");
-    await staffPage.getByLabel(/Contrasena/i).fill("jacklaw123");
-    await staffPage.getByRole("button", { name: /Entrar/i }).click();
-
-    await staffPage.goto("/staff/content");
-    await expect(
-      staffPage.getByRole("heading", { name: /Contenido de preguntas/i }),
-    ).toBeVisible();
-    await expect(
-      staffPage.locator('form[action="/api/staff/questions/approve"]'),
-    ).toHaveCount(0);
-
-    const forbiddenAdminResponse = await staffPage.goto("/staff/admin");
-    expect(forbiddenAdminResponse?.status()).toBe(404);
-
     await adminPage.goto("/staff/login");
-    await adminPage
-      .getByLabel(/Correo/i)
-      .fill("admin.fictional@jacklaw.example");
     await adminPage.getByLabel(/Contrasena/i).fill("jacklaw123");
     await adminPage.getByRole("button", { name: /Entrar/i }).click();
+
+    await adminPage.goto("/staff/content");
+    await expect(
+      adminPage.getByRole("heading", { name: /Contenido de preguntas/i }),
+    ).toBeVisible();
 
     await adminPage.goto("/staff/admin");
     await expect(
@@ -567,9 +543,7 @@ test("staff can view content and admin can compare, draft, and approve versions"
       adminPage.locator('form[action="/api/staff/questions/approve"]'),
     ).toHaveCount(0);
   } finally {
-    await finalizeStaffArtifacts();
     await finalizeAdminArtifacts();
-    await staffPage.close();
     await adminPage.close();
   }
 });

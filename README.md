@@ -80,15 +80,10 @@ pnpm dev
 
 ## Demo credentials
 
-Staff:
+Staff/admin login (`/staff/login`) is password-only and always signs in as
+the admin account:
 
-- `staff.fictional@jacklaw.example`
-- `jacklaw123`
-
-Admin:
-
-- `admin.fictional@jacklaw.example`
-- `jacklaw123`
+- password: `jacklaw123`
 
 Client invitation:
 

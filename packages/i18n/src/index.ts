@@ -53,6 +53,11 @@ const messages = {
       "Honey guarda cada respuesta en el servidor inmediatamente.",
     dailyCapReached:
       "Ya completaste las preguntas disponibles por hoy. Puedes regresar cuando cambie tu fecha local.",
+    dashboardProgressLabel: "Tu progreso",
+    dashboardAllDoneTitle: "Terminaste todas las preguntas",
+    dashboardAllDoneBody:
+      "Gracias por compartir tu historia completa con Honey.",
+    dashboardBackToDashboard: "Ver el tablero de misiones",
     completeMission: "Mision completada",
     missionVictoryTitle: "¡Victoria!",
     rewardTitle: "Honey gano una pista por tu participacion",
@@ -133,6 +138,10 @@ const messages = {
     missionSaveBody: "Honey saves each answer on the server right away.",
     dailyCapReached:
       "You have already completed the questions available for today. You can come back when your local date changes.",
+    dashboardProgressLabel: "Your progress",
+    dashboardAllDoneTitle: "You finished every question",
+    dashboardAllDoneBody: "Thank you for sharing your full story with Honey.",
+    dashboardBackToDashboard: "View the mission board",
     completeMission: "Mission completed",
     missionVictoryTitle: "Victory!",
     rewardTitle: "Honey earned a clue for your participation",

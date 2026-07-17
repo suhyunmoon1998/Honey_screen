@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { prisma } from "@honey/db";
 import { getMessages } from "@honey/i18n";
 import { LocaleSwitch } from "@/components/locale-switch";
@@ -62,7 +63,10 @@ export default async function RewardPage() {
               </p>
             </div>
           ) : null}
-          <div className="mt-6">
+          <div className="mt-6 space-y-3">
+            <Link className="button-primary block text-center text-base" href="/dashboard">
+              {messages.dashboardBackToDashboard}
+            </Link>
             <SignOutForm />
           </div>
         </div>

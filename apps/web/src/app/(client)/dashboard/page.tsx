@@ -6,6 +6,7 @@ import { HONEY_LEVELS } from "@honey/domain";
 import { LocaleSwitch } from "@/components/locale-switch";
 import { SignOutForm } from "@/components/signout-form";
 import { requireClientSession } from "@/lib/authz";
+import { getDashboardMissionStatus } from "@/lib/services";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ export default async function DashboardPage({
   const query = searchParams ? await searchParams : undefined;
   const locale = (session.locale === "en" ? "en" : "es") as "es" | "en";
   const messages = getMessages(locale);
-  const [activeMission, honeyProfile] = await Promise.all([
+  const [activeMission, honeyProfile, missionStatus] = await Promise.all([
     prisma.mission.findFirst({
       where: {
         clientId: session.actorId,
@@ -30,6 +31,10 @@ export default async function DashboardPage({
     }),
     prisma.honeyProfile.findUnique({
       where: { clientId: session.actorId },
+    }),
+    getDashboardMissionStatus({
+      clientId: session.actorId,
+      organizationId: session.organizationId,
     }),
   ]);
 
@@ -58,7 +63,11 @@ export default async function DashboardPage({
       hits: 12,
       tone: "from-[#a689ff] via-[#7c5cff] to-[#1c9d74]",
     },
-  ];
+  ].filter((choice) => choice.hits <= missionStatus.remainingDailyAllowance);
+
+  const isAllCaughtUp =
+    !activeMission &&
+    (!missionStatus.hasUnansweredQuestions || missionChoices.length === 0);
 
   return (
     <main className="page-shell min-h-screen px-4 py-6 sm:py-8">
@@ -135,8 +144,18 @@ export default async function DashboardPage({
           )}
         </div>
 
+        <div className="flex items-center justify-between px-1 text-xs">
+          <span className="pixel-label muted">
+            {messages.dashboardProgressLabel}
+          </span>
+          <span className="font-semibold text-[#c9b8ff]">
+            {missionStatus.answeredCount}/{missionStatus.totalCount}{" "}
+            {messages.dashboardHitsLabel}
+          </span>
+        </div>
+
         <div className="space-y-3">
-          {query?.status === "daily-cap" ? (
+          {query?.status === "daily-cap" && !isAllCaughtUp ? (
             <p className="rounded-2xl border border-[#4a3b7a] bg-[#241c3e] px-4 py-3 text-sm text-[#c9b8ff]">
               {messages.dailyCapReached}
             </p>
@@ -154,6 +173,19 @@ export default async function DashboardPage({
                 {messages.dashboardActiveSlotBody}
               </p>
             </>
+          ) : isAllCaughtUp ? (
+            <div className="rounded-[22px] border border-[#2f5f4c] bg-[#152a22] px-5 py-4 text-center">
+              <p className="text-lg font-semibold text-[#a9f5d6]">
+                {missionStatus.hasUnansweredQuestions
+                  ? messages.dailyCapReached
+                  : messages.dashboardAllDoneTitle}
+              </p>
+              {!missionStatus.hasUnansweredQuestions ? (
+                <p className="mt-2 text-sm text-[#8fd9bb]">
+                  {messages.dashboardAllDoneBody}
+                </p>
+              ) : null}
+            </div>
           ) : (
             missionChoices.map((choice) => (
               <Link
@@ -177,10 +209,7 @@ export default async function DashboardPage({
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-3 px-1 text-sm">
-          <Link className="muted" href="/settings/notifications">
-            {messages.notificationSettingsTitle}
-          </Link>
+        <div className="flex justify-end px-1 text-sm">
           <div className="w-32">
             <SignOutForm />
           </div>

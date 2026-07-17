@@ -1316,6 +1316,48 @@ export async function getOrCreateQuickMission(input: {
   });
 }
 
+export async function getDashboardMissionStatus(input: {
+  clientId: string;
+  organizationId: string;
+}) {
+  const client = await prisma.client.findUniqueOrThrow({
+    where: { id: input.clientId },
+  });
+  const localDate = getLocalDateInTimeZone(new Date(), client.timeZone);
+
+  const [answeredRevisions, totalQuestions, ledgerEntries] =
+    await Promise.all([
+      prisma.answerRevision.findMany({
+        where: { clientId: input.clientId },
+        select: { questionVersion: { select: { definitionId: true } } },
+      }),
+      prisma.questionDefinition.findMany({
+        where: {
+          organizationId: input.organizationId,
+          versions: { some: { fictionalSeed: false } },
+        },
+        select: { id: true },
+      }),
+      prisma.dailyQuestionLedger.count({
+        where: { clientId: input.clientId, localDate },
+      }),
+    ]);
+
+  const answeredDefinitionIds = new Set(
+    answeredRevisions.map((revision) => revision.questionVersion.definitionId),
+  );
+  const answeredCount = totalQuestions.filter((question) =>
+    answeredDefinitionIds.has(question.id),
+  ).length;
+
+  return {
+    answeredCount,
+    totalCount: totalQuestions.length,
+    remainingDailyAllowance: Math.max(0, 12 - ledgerEntries),
+    hasUnansweredQuestions: answeredCount < totalQuestions.length,
+  };
+}
+
 export async function getMissionForClient(missionId: string, clientId: string) {
   return prisma.mission.findFirst({
     where: {

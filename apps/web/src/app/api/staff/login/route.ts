@@ -11,19 +11,33 @@ const schema = z.object({
 
 export async function POST(request: Request) {
   const formData = await request.formData();
-  const body = schema.parse({
+  const parsed = schema.safeParse({
     password: formData.get("password"),
   });
-  const staff = await signInStaff({
-    email: STAFF_LOGIN_EMAIL,
-    password: body.password,
-  });
-  await createSession({
-    actorType: "STAFF",
-    actorId: staff.id,
-    organizationId: staff.organizationId,
-    role: staff.role,
-    locale: "es",
-  });
+
+  if (!parsed.success) {
+    return noStoreRedirect(
+      new URL("/staff/login?status=invalid", request.url),
+    );
+  }
+
+  try {
+    const staff = await signInStaff({
+      email: STAFF_LOGIN_EMAIL,
+      password: parsed.data.password,
+    });
+    await createSession({
+      actorType: "STAFF",
+      actorId: staff.id,
+      organizationId: staff.organizationId,
+      role: staff.role,
+      locale: "es",
+    });
+  } catch {
+    return noStoreRedirect(
+      new URL("/staff/login?status=invalid", request.url),
+    );
+  }
+
   return noStoreRedirect(new URL("/staff/notifications", request.url));
 }

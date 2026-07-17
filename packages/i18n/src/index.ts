@@ -11,7 +11,7 @@ const messages = {
     privacyConsent: "Acepto el aviso de privacidad.",
     messageConsent:
       "Acepto recibir mensajes transaccionales sobre mi registro.",
-    requestOtp: "Enviar codigo",
+    requestOtp: "Empecemos",
     verifyOtp: "Verificar codigo",
     onboardingTitle: "Antes de empezar",
     onboardingBody:
@@ -92,7 +92,7 @@ const messages = {
       "Share information in short sessions. Sending this information does not mean JACKLAW has accepted your matter.",
     privacyConsent: "I accept the privacy notice.",
     messageConsent: "I accept transactional messages about my registration.",
-    requestOtp: "Send code",
+    requestOtp: "Let's start",
     verifyOtp: "Verify code",
     onboardingTitle: "Before we begin",
     onboardingBody:

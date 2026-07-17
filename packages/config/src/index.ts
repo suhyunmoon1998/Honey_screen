@@ -127,14 +127,6 @@ const envSchema = z
       });
     }
 
-    if (data.NODE_ENV === "production" && data.DEV_STAFF_AUTH_ENABLED) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["DEV_STAFF_AUTH_ENABLED"],
-        message: "DEV_STAFF_AUTH_ENABLED must be false in production.",
-      });
-    }
-
     const requiresRealOtpDelivery =
       data.OTP_VERIFICATION_ENABLED && data.NODE_ENV === "production";
 

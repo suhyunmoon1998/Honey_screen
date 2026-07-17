@@ -6,26 +6,26 @@ export const dynamic = "force-dynamic";
 
 const STATUS_MESSAGES: Record<string, { text: string; tone: "ok" | "error" }> = {
   "invite-sent": {
-    text: "Invitacion enviada por SMS.",
+    text: "Invitation sent by SMS.",
     tone: "ok",
   },
   "invite-failed": {
-    text: "No se pudo enviar el SMS. Revisa la configuracion de Twilio o intenta de nuevo.",
+    text: "Could not send the SMS. Check the Twilio configuration or try again.",
     tone: "error",
   },
   "invite-invalid": {
-    text: "Numero de telefono invalido.",
+    text: "Invalid phone number.",
     tone: "error",
   },
 };
 
 const CASE_STATUS_LABELS: Record<string, string> = {
-  NEW: "Nuevo",
-  UNDER_REVIEW: "En revision",
-  QUALIFIED: "Calificado",
-  NOT_QUALIFIED: "No calificado",
-  CALLED: "Contactado",
-  CLOSED: "Cerrado",
+  NEW: "New",
+  UNDER_REVIEW: "Under review",
+  QUALIFIED: "Qualified",
+  NOT_QUALIFIED: "Not qualified",
+  CALLED: "Called",
+  CLOSED: "Closed",
 };
 
 export default async function StaffClientsPage({
@@ -58,17 +58,16 @@ export default async function StaffClientsPage({
     <main className="page-shell min-h-screen px-4 py-8">
       <section className="mx-auto max-w-5xl space-y-4">
         <div className="card p-6">
-          <h1 className="text-3xl font-semibold">Clientes</h1>
+          <h1 className="text-3xl font-semibold">Clients</h1>
           <p className="mt-3 muted">
-            {clients.length} cliente(s) en esta organizacion.
+            {clients.length} client(s) in this organization.
           </p>
         </div>
 
         <div className="card p-6">
-          <h2 className="text-xl font-semibold">Invitar cliente nuevo</h2>
+          <h2 className="text-xl font-semibold">Invite a new client</h2>
           <p className="mt-2 text-sm muted">
-            Crea una invitacion real y envia el enlace por SMS al numero
-            indicado.
+            Create a real invitation and text the link to the given number.
           </p>
           {statusMessage ? (
             <p
@@ -88,7 +87,7 @@ export default async function StaffClientsPage({
           >
             <label className="block flex-1 min-w-[200px]">
               <span className="mb-1 block text-sm font-medium">
-                Numero de telefono
+                Phone number
               </span>
               <input
                 className="field"
@@ -98,14 +97,14 @@ export default async function StaffClientsPage({
               />
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-medium">Idioma</span>
+              <span className="mb-1 block text-sm font-medium">Language</span>
               <select className="field" name="locale">
-                <option value="es">Espanol</option>
+                <option value="es">Spanish</option>
                 <option value="en">English</option>
               </select>
             </label>
             <button className="button-primary" type="submit">
-              Enviar invitacion
+              Send invitation
             </button>
           </form>
         </div>
@@ -114,13 +113,13 @@ export default async function StaffClientsPage({
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b border-line bg-white/60 text-left text-[#1c1433]">
-                <th className="px-4 py-3 font-semibold">Telefono</th>
-                <th className="px-4 py-3 font-semibold">Estado del caso</th>
-                <th className="px-4 py-3 font-semibold">Idioma</th>
-                <th className="px-4 py-3 font-semibold">Registrado</th>
-                <th className="px-4 py-3 font-semibold">Mision activa</th>
-                <th className="px-4 py-3 font-semibold">Alertas abiertas</th>
-                <th className="px-4 py-3 font-semibold">Nivel Honey</th>
+                <th className="px-4 py-3 font-semibold">Phone</th>
+                <th className="px-4 py-3 font-semibold">Case status</th>
+                <th className="px-4 py-3 font-semibold">Language</th>
+                <th className="px-4 py-3 font-semibold">Registered</th>
+                <th className="px-4 py-3 font-semibold">Active mission</th>
+                <th className="px-4 py-3 font-semibold">Open flags</th>
+                <th className="px-4 py-3 font-semibold">Honey level</th>
                 <th className="px-4 py-3 font-semibold" />
               </tr>
             </thead>
@@ -142,7 +141,7 @@ export default async function StaffClientsPage({
                       </a>
                       {client.legalHold ? (
                         <span className="ml-2 rounded-full bg-[#f3ebe2] px-2 py-0.5 text-xs uppercase tracking-[0.15em]">
-                          Retencion legal
+                          Legal hold
                         </span>
                       ) : null}
                     </td>
@@ -159,7 +158,7 @@ export default async function StaffClientsPage({
                       {client.createdAt.toISOString().slice(0, 10)}
                     </td>
                     <td className="px-4 py-3">
-                      {hasActiveMission ? "Si" : "No"}
+                      {hasActiveMission ? "Yes" : "No"}
                     </td>
                     <td className="px-4 py-3">
                       {openFlagCount > 0 ? (
@@ -180,7 +179,7 @@ export default async function StaffClientsPage({
                         className="button-secondary inline-block px-3 py-1.5 text-xs"
                         href={`/staff/clients/${client.id}`}
                       >
-                        Ver detalle
+                        View detail
                       </Link>
                     </td>
                   </tr>

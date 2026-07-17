@@ -15,19 +15,19 @@ export default async function StaffNotificationsPage() {
     <main className="page-shell min-h-screen px-4 py-8">
       <section className="card mx-auto max-w-2xl p-6">
         <div className="flex items-center justify-between gap-4">
-          <h1 className="text-3xl font-semibold">Notificaciones del equipo</h1>
+          <h1 className="text-3xl font-semibold">Team notifications</h1>
           <form action="/api/staff/logout" method="post">
             <button className="button-secondary" type="submit">
-              Cerrar sesion
+              Sign out
             </button>
           </form>
         </div>
         <nav className="mt-4 flex flex-wrap gap-2 text-sm">
           <Link className="button-secondary px-3 py-1.5" href="/staff/clients">
-            Clientes
+            Clients
           </Link>
           <Link className="button-secondary px-3 py-1.5" href="/staff/content">
-            Contenido
+            Content
           </Link>
         </nav>
         <div className="mt-6 space-y-3">
@@ -48,7 +48,7 @@ export default async function StaffNotificationsPage() {
             </article>
           ))}
           {notifications.length === 0 ? (
-            <p className="muted">Todavia no hay notificaciones.</p>
+            <p className="muted">No notifications yet.</p>
           ) : null}
         </div>
       </section>

@@ -562,8 +562,8 @@ async function finalizeClientRegistration(input: {
             payloadJson: {
               recipientId: staff.id,
               type: "CLIENT_REGISTERED",
-              title: "Nuevo registro de cliente",
-              body: "Un cliente ficticio completo su registro inicial con Honey.",
+              title: "New client registered",
+              body: "A client completed their initial registration with Honey.",
             },
           },
         });
@@ -1692,8 +1692,8 @@ export async function saveMissionAnswer(input: {
               payloadJson: {
                 recipientId: staff.id,
                 type: "MISSION_COMPLETED",
-                title: "Mision completada",
-                body: "Un cliente ficticio completo una mision corta con Honey.",
+                title: "Mission completed",
+                body: "A client completed a short mission with Honey.",
               },
             },
           });

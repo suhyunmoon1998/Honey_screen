@@ -27,10 +27,10 @@ export default async function StaffContentPage() {
     <main className="page-shell min-h-screen px-4 py-8">
       <section className="mx-auto max-w-5xl space-y-4">
         <div className="card p-6">
-          <h1 className="text-3xl font-semibold">Contenido de preguntas</h1>
+          <h1 className="text-3xl font-semibold">Question content</h1>
           <p className="mt-3 muted">
-            Vista de solo lectura para personal. Solo administracion autorizada
-            puede aprobar o retirar versiones.
+            Read-only view for staff. Only authorized admins can approve or
+            retire versions.
           </p>
         </div>
         {definitions.map((definition) => (
@@ -55,7 +55,7 @@ export default async function StaffContentPage() {
                       {version.legalReviewStatus}
                     </span>
                     <span className="text-xs text-[#6b6382]">
-                      Usada en {version.missionSlots.length} snapshots
+                      Used in {version.missionSlots.length} snapshots
                     </span>
                   </div>
                   <p className="mt-3 text-sm font-medium">ES</p>

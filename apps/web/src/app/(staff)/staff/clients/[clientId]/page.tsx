@@ -7,24 +7,24 @@ export const dynamic = "force-dynamic";
 
 function formatAnswer(valueJson: unknown) {
   if (typeof valueJson === "boolean") {
-    return valueJson ? "Si" : "No";
+    return valueJson ? "Yes" : "No";
   }
 
   return String(valueJson);
 }
 
 const CASE_STATUS_LABELS: Record<string, string> = {
-  NEW: "Nuevo",
-  UNDER_REVIEW: "En revision",
-  QUALIFIED: "Calificado",
-  NOT_QUALIFIED: "No calificado",
-  CALLED: "Contactado",
-  CLOSED: "Cerrado",
+  NEW: "New",
+  UNDER_REVIEW: "Under review",
+  QUALIFIED: "Qualified",
+  NOT_QUALIFIED: "Not qualified",
+  CALLED: "Called",
+  CLOSED: "Closed",
 };
 
 const NOTE_TYPE_LABELS: Record<string, string> = {
-  EVALUATION: "Evaluacion",
-  CALL_LOG: "Registro de llamada",
+  EVALUATION: "Evaluation",
+  CALL_LOG: "Call log",
   GENERAL: "General",
 };
 
@@ -105,17 +105,17 @@ export default async function StaffClientDetailPage({
     <main className="page-shell min-h-screen px-4 py-8">
       <section className="mx-auto max-w-5xl space-y-4">
         <Link className="text-sm muted" href="/staff/clients">
-          &larr; Volver a clientes
+          &larr; Back to clients
         </Link>
 
         {query?.status === "update-failed" ? (
           <p className="rounded-2xl border border-[#f05252]/40 bg-[#2f1a1a] px-4 py-3 text-sm text-[#f5b8b8]">
-            No se pudo actualizar el estado del caso.
+            Could not update the case status.
           </p>
         ) : null}
         {query?.status === "note-failed" ? (
           <p className="rounded-2xl border border-[#f05252]/40 bg-[#2f1a1a] px-4 py-3 text-sm text-[#f5b8b8]">
-            No se pudo guardar la nota.
+            Could not save the note.
           </p>
         ) : null}
 
@@ -128,12 +128,12 @@ export default async function StaffClientDetailPage({
               </span>
               {client.legalHold ? (
                 <span className="rounded-full bg-[#f3ebe2] px-3 py-1 text-xs uppercase tracking-[0.15em]">
-                  Retencion legal
+                  Legal hold
                 </span>
               ) : null}
               {client.deletedAt ? (
                 <span className="rounded-full bg-[#f6dede] px-3 py-1 text-xs uppercase tracking-[0.15em] text-[#8a2b2b]">
-                  Eliminado
+                  Deleted
                 </span>
               ) : null}
             </div>
@@ -141,7 +141,7 @@ export default async function StaffClientDetailPage({
               className="button-primary px-4 py-2 text-sm"
               href={`tel:${client.phoneE164}`}
             >
-              Llamar
+              Call
             </a>
           </div>
 
@@ -152,7 +152,7 @@ export default async function StaffClientDetailPage({
           >
             <label className="block">
               <span className="mb-1 block text-sm font-medium">
-                Estado del caso
+                Case status
               </span>
               <select
                 className="field"
@@ -167,39 +167,39 @@ export default async function StaffClientDetailPage({
               </select>
             </label>
             <button className="button-secondary" type="submit">
-              Actualizar estado
+              Update status
             </button>
           </form>
 
           <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
             <div>
-              <dt className="muted">Idioma</dt>
+              <dt className="muted">Language</dt>
               <dd className="uppercase">{client.locale}</dd>
             </div>
             <div>
-              <dt className="muted">Zona horaria</dt>
+              <dt className="muted">Time zone</dt>
               <dd>{client.timeZone}</dd>
             </div>
             <div>
-              <dt className="muted">Registrado</dt>
+              <dt className="muted">Registered</dt>
               <dd>{client.createdAt.toISOString().slice(0, 10)}</dd>
             </div>
             <div>
-              <dt className="muted">Clase de retencion</dt>
+              <dt className="muted">Retention class</dt>
               <dd>{client.retentionClass}</dd>
             </div>
           </dl>
           {client.honeyProfile ? (
             <p className="mt-4 text-sm muted">
-              Progreso Honey: {client.honeyProfile.levelKey} (
-              {client.honeyProfile.totalPoints} puntos)
+              Honey progress: {client.honeyProfile.levelKey} (
+              {client.honeyProfile.totalPoints} points)
             </p>
           ) : null}
         </div>
 
         {client.reviewFlags.length > 0 ? (
           <div className="card p-6">
-            <h2 className="text-xl font-semibold">Alertas de revision</h2>
+            <h2 className="text-xl font-semibold">Review alerts</h2>
             <div className="mt-3 space-y-2">
               {client.reviewFlags.map((flag) => (
                 <div
@@ -217,14 +217,14 @@ export default async function StaffClientDetailPage({
         ) : null}
 
         <div className="card p-6">
-          <h2 className="text-xl font-semibold">Evaluacion y llamadas</h2>
+          <h2 className="text-xl font-semibold">Evaluation and calls</h2>
           <form
             action={`/api/staff/clients/${client.id}/notes`}
             className="mt-4 space-y-3"
             method="post"
           >
             <label className="block">
-              <span className="mb-1 block text-sm font-medium">Tipo</span>
+              <span className="mb-1 block text-sm font-medium">Type</span>
               <select className="field" name="noteType">
                 {Object.entries(NOTE_TYPE_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>
@@ -234,16 +234,16 @@ export default async function StaffClientDetailPage({
               </select>
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-medium">Nota</span>
+              <span className="mb-1 block text-sm font-medium">Note</span>
               <textarea
                 className="field min-h-24"
                 name="body"
-                placeholder="Resultado de la evaluacion o de la llamada..."
+                placeholder="Evaluation result or call outcome..."
                 required
               />
             </label>
             <button className="button-primary" type="submit">
-              Guardar nota
+              Save note
             </button>
           </form>
 
@@ -268,7 +268,7 @@ export default async function StaffClientDetailPage({
               ))}
             </div>
           ) : (
-            <p className="mt-4 text-sm muted">Todavia no hay notas.</p>
+            <p className="mt-4 text-sm muted">No notes yet.</p>
           )}
         </div>
 
@@ -280,12 +280,12 @@ export default async function StaffClientDetailPage({
                   {mission.kind} &middot; {mission.state}
                 </p>
                 <h2 className="mt-1 text-xl font-semibold">
-                  Mision creada {mission.createdAt.toISOString().slice(0, 10)}
+                  Mission created {mission.createdAt.toISOString().slice(0, 10)}
                 </h2>
               </div>
               <span className="muted text-sm">
                 {mission.slots.filter((slot) => slot.state === "ANSWERED").length}/
-                {mission.requestedSize} respondidas
+                {mission.requestedSize} answered
               </span>
             </div>
             <div className="mt-4 space-y-3">
@@ -301,11 +301,11 @@ export default async function StaffClientDetailPage({
                       {slot.questionDefinition.category}
                     </p>
                     <p className="mt-1 text-sm font-medium">
-                      {slot.questionVersion.promptEs}
+                      {slot.questionVersion.promptEn}
                     </p>
                     {latestAnswer ? (
                       <p className="mt-2 text-sm">
-                        <span className="font-semibold">Respuesta:</span>{" "}
+                        <span className="font-semibold">Answer:</span>{" "}
                         {formatAnswer(latestAnswer.valueJson)}
                         <span className="text-[#6b6382]">
                           {" "}
@@ -315,7 +315,7 @@ export default async function StaffClientDetailPage({
                       </p>
                     ) : (
                       <p className="mt-2 text-sm text-[#6b6382]">
-                        Sin responder
+                        Not answered
                       </p>
                     )}
                   </div>

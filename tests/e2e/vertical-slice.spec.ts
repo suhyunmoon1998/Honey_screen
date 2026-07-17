@@ -256,11 +256,11 @@ test("Spanish invitation to mission completion and staff notifications", async (
 
     try {
       await staffPage.goto("/staff/login");
-      await staffPage.getByLabel(/Contrasena/i).fill("jacklaw123");
-      await staffPage.getByRole("button", { name: /Entrar/i }).click();
+      await staffPage.getByLabel(/Password/i).fill("jacklaw123");
+      await staffPage.getByRole("button", { name: /Sign in/i }).click();
 
       await expect(
-        staffPage.getByRole("heading", { name: /Notificaciones del equipo/i }),
+        staffPage.getByRole("heading", { name: /Team notifications/i }),
       ).toBeVisible();
 
       await expect
@@ -268,7 +268,7 @@ test("Spanish invitation to mission completion and staff notifications", async (
           async () => {
             await staffPage.reload();
             return await staffPage
-              .getByText(/Nuevo registro de cliente/i)
+              .getByText(/New client registered/i)
               .count();
           },
           { timeout: 15_000 },
@@ -278,16 +278,16 @@ test("Spanish invitation to mission completion and staff notifications", async (
         .poll(
           async () => {
             await staffPage.reload();
-            return await staffPage.getByText(/Mision completada/i).count();
+            return await staffPage.getByText(/Mission completed/i).count();
           },
           { timeout: 15_000 },
         )
         .toBeGreaterThan(0);
 
       await expect(
-        staffPage.getByText(/Nuevo registro de cliente/i),
+        staffPage.getByText(/New client registered/i),
       ).toBeVisible();
-      await expect(staffPage.getByText(/Mision completada/i)).toBeVisible();
+      await expect(staffPage.getByText(/Mission completed/i)).toBeVisible();
     } finally {
       await finalizeStaffArtifacts();
       await staffPage.close();
@@ -505,17 +505,17 @@ test("admin can view content, draft, and approve versions", async ({
 
   try {
     await adminPage.goto("/staff/login");
-    await adminPage.getByLabel(/Contrasena/i).fill("jacklaw123");
-    await adminPage.getByRole("button", { name: /Entrar/i }).click();
+    await adminPage.getByLabel(/Password/i).fill("jacklaw123");
+    await adminPage.getByRole("button", { name: /Sign in/i }).click();
 
     await adminPage.goto("/staff/content");
     await expect(
-      adminPage.getByRole("heading", { name: /Contenido de preguntas/i }),
+      adminPage.getByRole("heading", { name: /Question content/i }),
     ).toBeVisible();
 
     await adminPage.goto("/staff/admin");
     await expect(
-      adminPage.getByRole("heading", { name: /Administracion de contenido/i }),
+      adminPage.getByRole("heading", { name: /Content administration/i }),
     ).toBeVisible();
 
     const draftForm = adminPage
@@ -527,7 +527,7 @@ test("admin can view content, draft, and approve versions", async ({
     await draftForm
       .locator('textarea[name="promptEn"]')
       .fill("Updated fictional content for the diff test.");
-    await draftForm.getByRole("button", { name: /Crear DRAFT/i }).click();
+    await draftForm.getByRole("button", { name: /Create DRAFT/i }).click();
 
     await expect(adminPage.getByText(/DRAFT v/i).first()).toBeVisible();
     await expect(adminPage.getByText(/Spanish text/i).first()).toBeVisible();
@@ -536,7 +536,7 @@ test("admin can view content, draft, and approve versions", async ({
     await adminPage
       .locator('form[action="/api/staff/questions/approve"]')
       .first()
-      .getByRole("button", { name: /Aprobar/i })
+      .getByRole("button", { name: /Approve/i })
       .click();
 
     await expect(

@@ -153,12 +153,11 @@ export default async function AdminPage() {
       <section className="mx-auto max-w-6xl space-y-4">
         <div className="card p-6">
           <h1 className="text-3xl font-semibold">
-            Administracion de contenido
+            Content administration
           </h1>
           <p className="mt-3 muted">
-            Crear borradores, comparar cambios de solo lectura frente a la
-            version aprobada, aprobar versiones validas y retirar versiones
-            activas.
+            Create drafts, compare read-only changes against the approved
+            version, approve valid versions, and retire active versions.
           </p>
         </div>
         {definitions.map((definition) => {
@@ -179,7 +178,7 @@ export default async function AdminPage() {
               </h2>
               <div className="mt-5 grid gap-4 md:grid-cols-2">
                 <div className="rounded-2xl border border-line bg-white p-4 text-[#1c1433]">
-                  <p className="text-sm font-semibold">Version aprobada</p>
+                  <p className="text-sm font-semibold">Approved version</p>
                   {approved ? (
                     <>
                       <p className="mt-3 text-sm font-medium">ES</p>
@@ -193,12 +192,12 @@ export default async function AdminPage() {
                     </>
                   ) : (
                     <p className="mt-3 text-sm text-[#6b6382]">
-                      Todavia no hay version aprobada.
+                      No approved version yet.
                     </p>
                   )}
                 </div>
                 <div className="rounded-2xl border border-line bg-white p-4 text-[#1c1433]">
-                  <p className="text-sm font-semibold">Crear version DRAFT</p>
+                  <p className="text-sm font-semibold">Create DRAFT version</p>
                   <form
                     action="/api/staff/questions/draft"
                     className="mt-3 space-y-3"
@@ -226,7 +225,7 @@ export default async function AdminPage() {
                       />
                     </label>
                     <button className="button-primary" type="submit">
-                      Crear DRAFT
+                      Create DRAFT
                     </button>
                   </form>
                 </div>
@@ -243,7 +242,7 @@ export default async function AdminPage() {
                           DRAFT v{draft.versionNumber}
                         </p>
                         <p className="text-xs text-[#6b6382]">
-                          Usada en {draft.missionSlots.length} snapshots
+                          Used in {draft.missionSlots.length} snapshots
                         </p>
                       </div>
                       <div className="flex gap-2">
@@ -257,7 +256,7 @@ export default async function AdminPage() {
                             value={draft.id}
                           />
                           <button className="button-primary" type="submit">
-                            Aprobar
+                            Approve
                           </button>
                         </form>
                         <form
@@ -270,7 +269,7 @@ export default async function AdminPage() {
                             value={draft.id}
                           />
                           <button className="button-secondary" type="submit">
-                            Retirar
+                            Retire
                           </button>
                         </form>
                       </div>
@@ -346,7 +345,7 @@ export default async function AdminPage() {
                             Version {version.versionNumber}
                           </p>
                           <p className="text-xs text-[#6b6382]">
-                            Estado {version.legalReviewStatus}. Usada en{" "}
+                            Status {version.legalReviewStatus}. Used in{" "}
                             {version.missionSlots.length} snapshots.
                           </p>
                         </div>
@@ -361,7 +360,7 @@ export default async function AdminPage() {
                               value={version.id}
                             />
                             <button className="button-secondary" type="submit">
-                              Retirar aprobada
+                              Retire approved
                             </button>
                           </form>
                         ) : null}

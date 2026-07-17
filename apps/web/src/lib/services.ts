@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { getEnv } from "@honey/config";
 import { prisma, type Prisma } from "@honey/db";
 import {
@@ -203,6 +204,71 @@ export async function getInvitationPreview(token: string) {
   }
 
   return invitation;
+}
+
+export async function createInvitationForClient(input: {
+  actorId: string;
+  rawPhone: string;
+  locale: Locale;
+}) {
+  const env = getEnv();
+  const phoneE164 = normalizePhoneToE164(input.rawPhone);
+  const token = randomBytes(16).toString("hex");
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+  const invitation = await prisma.$transaction(async (tx) => {
+    const actor = await getAuthorizedStaffActor(tx, input.actorId, "STAFF");
+
+    const created = await tx.invitation.create({
+      data: {
+        organizationId: actor.organizationId,
+        tokenHash: hashToken(token),
+        phoneE164,
+        locale: input.locale,
+        timeZone: env.ORGANIZATION_DEFAULT_TIME_ZONE,
+        expiresAt,
+        eligibleForDeletionAt: expiresAt,
+      },
+    });
+
+    await tx.auditEvent.create({
+      data: {
+        organizationId: actor.organizationId,
+        actorType: "STAFF",
+        actorId: actor.id,
+        action: "INVITATION_CREATED",
+        targetType: "INVITATION",
+        targetId: created.id,
+        metadataJson: {},
+      },
+    });
+
+    return created;
+  });
+
+  const inviteUrl = new URL(`/invite/${token}`, env.APP_URL).toString();
+  const body =
+    input.locale === "es"
+      ? `Honey te invito a una conversacion corta sobre tu trabajo: ${inviteUrl}`
+      : `Honey invited you to a short conversation about your work: ${inviteUrl}`;
+
+  if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN || !env.TWILIO_FROM_NUMBER) {
+    throw new Error("SMS_PROVIDER_NOT_CONFIGURED");
+  }
+
+  const result = await sendSms({
+    accountSid: env.TWILIO_ACCOUNT_SID,
+    authToken: env.TWILIO_AUTH_TOKEN,
+    fromNumber: env.TWILIO_FROM_NUMBER,
+    toE164: phoneE164,
+    body,
+  });
+
+  if (!result.ok) {
+    throw new Error("INVITATION_SMS_FAILED");
+  }
+
+  return { invitation, inviteUrl };
 }
 
 export async function requestOtp(input: {

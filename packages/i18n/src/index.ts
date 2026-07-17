@@ -32,6 +32,9 @@ const messages = {
     dashboardActiveSlotBody:
       "Retoma donde te quedaste. Tu progreso sigue vinculado a la mision actual.",
     dashboardMissionSelectLabel: "Seleccion de mision",
+    dashboardHitsLabel: "preguntas",
+    dashboardBossTeaserLabel: "Enemigo esperando",
+    dashboardBossTeaserBody: "Cada respuesta le resta energia.",
     dashboardMissionCardBody:
       "Empieza un paso guiado de admision con Honey acompanandote.",
     dashboardComfortLabel: "Comodidad",
@@ -108,6 +111,9 @@ const messages = {
     dashboardActiveSlotBody:
       "Pick up where you left off. Your progress stays tied to the current mission slot.",
     dashboardMissionSelectLabel: "Mission Select",
+    dashboardHitsLabel: "questions",
+    dashboardBossTeaserLabel: "Enemy waiting",
+    dashboardBossTeaserBody: "Every answer chips away its health.",
     dashboardMissionCardBody:
       "Start a focused intake step with Honey guiding the flow.",
     dashboardComfortLabel: "Comfort",

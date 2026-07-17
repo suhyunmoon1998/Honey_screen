@@ -4,8 +4,29 @@ import { requireStaffSession } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
-export default async function StaffClientsPage() {
+const STATUS_MESSAGES: Record<string, { text: string; tone: "ok" | "error" }> = {
+  "invite-sent": {
+    text: "Invitacion enviada por SMS.",
+    tone: "ok",
+  },
+  "invite-failed": {
+    text: "No se pudo enviar el SMS. Revisa la configuracion de Twilio o intenta de nuevo.",
+    tone: "error",
+  },
+  "invite-invalid": {
+    text: "Numero de telefono invalido.",
+    tone: "error",
+  },
+};
+
+export default async function StaffClientsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ status?: string }>;
+}) {
   const session = await requireStaffSession("STAFF");
+  const query = searchParams ? await searchParams : undefined;
+  const statusMessage = query?.status ? STATUS_MESSAGES[query.status] : null;
 
   const clients = await prisma.client.findMany({
     where: { organizationId: session.organizationId },
@@ -32,6 +53,52 @@ export default async function StaffClientsPage() {
           <p className="mt-3 muted">
             {clients.length} cliente(s) en esta organizacion.
           </p>
+        </div>
+
+        <div className="card p-6">
+          <h2 className="text-xl font-semibold">Invitar cliente nuevo</h2>
+          <p className="mt-2 text-sm muted">
+            Crea una invitacion real y envia el enlace por SMS al numero
+            indicado.
+          </p>
+          {statusMessage ? (
+            <p
+              className={`mt-3 rounded-2xl border px-4 py-3 text-sm ${
+                statusMessage.tone === "ok"
+                  ? "border-[#3ee8a8]/40 bg-[#1a2f2a] text-[#a9f5d6]"
+                  : "border-[#f05252]/40 bg-[#2f1a1a] text-[#f5b8b8]"
+              }`}
+            >
+              {statusMessage.text}
+            </p>
+          ) : null}
+          <form
+            action="/api/staff/invitations"
+            className="mt-4 flex flex-wrap items-end gap-3"
+            method="post"
+          >
+            <label className="block flex-1 min-w-[200px]">
+              <span className="mb-1 block text-sm font-medium">
+                Numero de telefono
+              </span>
+              <input
+                className="field"
+                name="rawPhone"
+                placeholder="+1 555 555 0101"
+                type="tel"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium">Idioma</span>
+              <select className="field" name="locale">
+                <option value="es">Espanol</option>
+                <option value="en">English</option>
+              </select>
+            </label>
+            <button className="button-primary" type="submit">
+              Enviar invitacion
+            </button>
+          </form>
         </div>
 
         <div className="card overflow-hidden p-0">

@@ -477,6 +477,35 @@ select {
   animation: victory-text-pop 0.5s 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
+/* idle life on the dashboard: Honey bobs, the boss teaser pulses a warning glow */
+@keyframes honey-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(1deg);
+  }
+}
+
+.honey-float {
+  animation: honey-float 3.2s ease-in-out infinite;
+}
+
+@keyframes boss-peek-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(240, 82, 82, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(240, 82, 82, 0.6);
+  }
+}
+
+.boss-peek {
+  animation: boss-peek-pulse 2.4s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .button-primary,
   .button-secondary,
@@ -509,7 +538,9 @@ select {
   .boss-shake-big,
   .boss-impact-ring,
   .victory-boss-defeat,
-  .victory-text {
+  .victory-text,
+  .honey-float,
+  .boss-peek {
     animation: none;
   }
 

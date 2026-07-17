@@ -492,6 +492,20 @@ select {
   animation: honey-float 3.2s ease-in-out infinite;
 }
 
+@keyframes honey-float-hero {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-16px) rotate(2deg);
+  }
+}
+
+.honey-float-hero {
+  animation: honey-float-hero 3.6s ease-in-out infinite;
+}
+
 @keyframes boss-peek-pulse {
   0%,
   100% {
@@ -540,6 +554,7 @@ select {
   .victory-boss-defeat,
   .victory-text,
   .honey-float,
+  .honey-float-hero,
   .boss-peek {
     animation: none;
   }

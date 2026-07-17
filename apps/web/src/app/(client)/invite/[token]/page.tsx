@@ -38,16 +38,14 @@ export default async function InvitationPage({
           </Link>
         </div>
         <div className="card overflow-hidden p-6">
-          <div className="glow-purple rounded-[28px] bg-[#150f28] p-4">
-            <Image
-              src="/honey-source.png"
-              alt="Honey, a friendly dog guide for the mission"
-              width={800}
-              height={800}
-              className="mx-auto h-auto w-full rounded-[22px] object-cover"
-              priority
-            />
-          </div>
+          <Image
+            src="/honey-source.png"
+            alt="Honey, a friendly dog guide for the mission"
+            width={800}
+            height={800}
+            className="honey-float-hero mx-auto h-auto w-full drop-shadow-[0_18px_28px_rgba(166,137,255,0.45)]"
+            priority
+          />
           <h1 className="mt-6 text-3xl font-semibold">
             {messages.inviteTitle}
           </h1>

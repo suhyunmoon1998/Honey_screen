@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getMessages } from "@honey/i18n";
 import { prisma } from "@honey/db";
 import { HONEY_LEVELS } from "@honey/domain";
+import { GameConsoleNav } from "@/components/game-console-nav";
 import { LocaleSwitch } from "@/components/locale-switch";
 import { SignOutForm } from "@/components/signout-form";
 import { requireClientSession } from "@/lib/authz";
@@ -68,6 +69,20 @@ export default async function DashboardPage({
 
   return (
     <main className="page-shell min-h-screen px-4 py-6 sm:py-8">
+      <GameConsoleNav
+        currentLocale={locale}
+        currentPath="/dashboard"
+        levelNumber={levelNumber}
+        levelTitle={levelTitle}
+        homeLabel={messages.navHomeLabel}
+        rewardLabel={messages.navRewardLabel}
+        remindersLabel={messages.navRemindersLabel}
+        menuLabel={messages.navMenuLabel}
+        openLabel={messages.navOpenLabel}
+        closeLabel={messages.navCloseLabel}
+        powerLabel={messages.navPowerLabel}
+        switchLanguageLabel={messages.switchLanguage}
+      />
       <section className="mx-auto max-w-md space-y-3">
         <div className="flex justify-end">
           <LocaleSwitch

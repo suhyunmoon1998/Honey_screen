@@ -89,6 +89,13 @@ const messages = {
     switchLanguage: "English",
     callJackLabel: "Llamar a Jack",
     callJackBody: "Habla directo con nuestro equipo si tienes preguntas.",
+    navMenuLabel: "MENU",
+    navOpenLabel: "Abrir menu",
+    navCloseLabel: "Cerrar menu",
+    navHomeLabel: "Tablero",
+    navRewardLabel: "Recompensas",
+    navRemindersLabel: "Recordatorios",
+    navPowerLabel: "EN LINEA",
   },
   en: {
     appName: "Honey Case Adventure",
@@ -171,6 +178,13 @@ const messages = {
     switchLanguage: "Español",
     callJackLabel: "Call Jack",
     callJackBody: "Talk directly with our team if you have questions.",
+    navMenuLabel: "MENU",
+    navOpenLabel: "Open menu",
+    navCloseLabel: "Close menu",
+    navHomeLabel: "Dashboard",
+    navRewardLabel: "Rewards",
+    navRemindersLabel: "Reminders",
+    navPowerLabel: "ONLINE",
   },
 } as const;
 

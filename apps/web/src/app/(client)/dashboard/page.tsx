@@ -196,7 +196,7 @@ export default async function DashboardPage({
 
         <div className="flex items-center gap-2">
           <a
-            className="button-secondary flex flex-1 items-center justify-center gap-1.5 text-center text-sm"
+            className="button-call flex flex-1 items-center justify-center gap-1.5 text-center text-sm"
             href={`tel:${JACK_PHONE_E164}`}
           >
             <span aria-hidden="true">📞</span>

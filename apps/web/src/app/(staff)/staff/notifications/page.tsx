@@ -26,9 +26,6 @@ export default async function StaffNotificationsPage() {
           <Link className="button-secondary px-3 py-1.5" href="/staff/clients">
             Clients
           </Link>
-          <Link className="button-secondary px-3 py-1.5" href="/staff/content">
-            Content
-          </Link>
         </nav>
         <div className="mt-6 space-y-3">
           {notifications.map((notification) => (

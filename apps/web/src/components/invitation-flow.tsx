@@ -3,6 +3,17 @@
 import { useState } from "react";
 import { formatPhoneInput } from "@/lib/format-phone";
 
+function withDetectedTimeZone(url: string) {
+  try {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const target = new URL(url, window.location.origin);
+    target.searchParams.set("tz", timeZone);
+    return target.toString();
+  } catch {
+    return url;
+  }
+}
+
 type Props = {
   token: string;
   locale: "es" | "en";
@@ -51,7 +62,7 @@ export function InvitationFlow({
     }
 
     if (data.redirectTo) {
-      window.location.href = data.redirectTo;
+      window.location.href = withDetectedTimeZone(data.redirectTo);
       return;
     }
 
@@ -81,7 +92,7 @@ export function InvitationFlow({
     }
 
     setStatus(locale === "es" ? "Verificado." : "Verified.");
-    window.location.href = data.redirectTo;
+    window.location.href = withDetectedTimeZone(data.redirectTo);
   }
 
   return (
